@@ -42,7 +42,7 @@ x_scaled = scaler.fit_transform(df[features])
 
 
 
-#EJECUCION DEL T-SNE
+#3.EJECUCION DEL T-SNE
 from sklearn.manifold import TSNE
 tsne = TSNE(n_components=2, perplexity=30, random_state=42, init='pca', learning_rate='auto')
 vis_dims = tsne.fit_transform(x_scaled)
