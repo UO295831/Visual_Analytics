@@ -44,9 +44,13 @@ x_scaled = scaler.fit_transform(df[features])
 
 #3.EJECUCION DEL T-SNE
 from sklearn.manifold import TSNE
-tsne = TSNE(n_components=2, perplexity=30, random_state=42, init='pca', learning_rate='auto')
-vis_dims = tsne.fit_transform(x_scaled)
-tsne = TSNE(n_components=2, perplexity=25, random_state=33)
+tsne = TSNE(
+    n_components=2, 
+    perplexity=25,      #balance entre grupos locales y globales
+    init='pca',         #empieza con una estructura lógica (Mejor para música)
+    learning_rate='auto', #deja que Python decida la velocidad óptima
+    random_state=33     #para que el gráfico sea siempre igual (reproducible) como seed en R
+)
 coord = tsne.fit_transform(x_scaled)
 
     #componentes a la base de datos
