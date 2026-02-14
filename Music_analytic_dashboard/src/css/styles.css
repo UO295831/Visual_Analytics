@@ -1,0 +1,260 @@
+/* src/css/styles.css */
+
+/* ============================================================================
+   RESET & BASICS
+   ============================================================================ */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    padding: 20px;
+    color: #333;
+}
+
+/* ============================================================================
+   HEADER
+   ============================================================================ */
+
+.dashboard-header {
+    background: rgba(255, 255, 255, 0.95);
+    padding: 30px;
+    border-radius: 15px;
+    margin-bottom: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    text-align: center;
+}
+
+.dashboard-header h1 {
+    font-size: 2.5em;
+    color: #667eea;
+    margin-bottom: 10px;
+}
+
+.dashboard-header .subtitle {
+    font-size: 1.2em;
+    color: #666;
+    margin-bottom: 20px;
+}
+
+.controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.controls select {
+    padding: 8px 15px;
+    font-size: 1em;
+    border: 2px solid #667eea;
+    border-radius: 5px;
+    background: white;
+    cursor: pointer;
+}
+
+/* ============================================================================
+   DASHBOARD LAYOUT
+   ============================================================================ */
+
+.dashboard-container {
+    display: flex;
+    gap: 20px;
+    max-width: 1800px;
+    margin: 0 auto;
+    min-height: 800px; 
+}
+
+.panel {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 15px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+}
+
+.left-panel {
+    flex: 0 0 60%;
+    display: flex;
+    flex-direction: column;
+    min-height: 700px; 
+}
+
+.right-panel {
+    flex: 0 0 calc(40% - 20px);
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.sub-panel {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 15px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 400px;  /* ← AÑADE ESTA LÍNEA */
+}
+
+/* ============================================================================
+   PANEL COMPONENTS
+   ============================================================================ */
+
+.panel-header {
+    padding: 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.panel-header h2 {
+    font-size: 1.5em;
+    margin-bottom: 5px;
+}
+
+.panel-description {
+    font-size: 0.9em;
+    opacity: 0.9;
+}
+
+.view-container {
+    flex: 1;
+    padding: 20px;
+    overflow: hidden;
+    min-height: 500px;  
+}
+
+.panel-footer {
+    padding: 15px 20px;
+    background: #f8f9fa;
+    border-top: 1px solid #e0e0e0;
+    font-size: 0.9em;
+    color: #666;
+}
+
+/* ============================================================================
+   LOADING INDICATOR
+   ============================================================================ */
+
+.loading {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(102, 126, 234, 0.95);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    color: white;
+}
+
+.loading.hidden {
+    display: none;
+}
+
+.spinner {
+    width: 60px;
+    height: 60px;
+    border: 5px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 20px;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.loading p {
+    font-size: 1.2em;
+}
+
+/* ============================================================================
+   TOOLTIP
+   ============================================================================ */
+
+.tooltip {
+    position: absolute;
+    background: rgba(0, 0, 0, 0.9);
+    color: white;
+    padding: 12px 15px;
+    border-radius: 8px;
+    pointer-events: none;
+    font-size: 0.9em;
+    z-index: 1000;
+    max-width: 300px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.tooltip strong {
+    display: block;
+    margin-bottom: 5px;
+    font-size: 1.1em;
+    color: #ffd700;
+}
+
+.tooltip .tooltip-row {
+    display: flex;
+    justify-content: space-between;
+    margin: 3px 0;
+}
+
+/* ============================================================================
+   SVG STYLES
+   ============================================================================ */
+
+.axis {
+    font-size: 12px;
+}
+
+.axis-label {
+    font-size: 14px;
+    font-weight: bold;
+    fill: #333;
+}
+
+.grid line {
+    stroke: #e0e0e0;
+    stroke-opacity: 0.7;
+}
+
+/* ============================================================================
+   RESPONSIVE DESIGN
+   ============================================================================ */
+
+@media (max-width: 1400px) {
+    .dashboard-container {
+        flex-direction: column;
+    }
+    
+    .left-panel,
+    .right-panel {
+        flex: 1;
+        width: 100%;
+    }
+}
+
+@media (max-width: 768px) {
+    body {
+        padding: 10px;
+    }
+    
+    .dashboard-header h1 {
+        font-size: 1.8em;
+    }
+    
+    .dashboard-header .subtitle {
+        font-size: 1em;
+    }
+}

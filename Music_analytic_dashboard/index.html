@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Music Analytics Dashboard</title>
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="src/css/styles.css">
+    
+    <!-- D3.js v7 -->
+    <script src="src/lib/d3.v7.min.js"></script>
+    
+</head>
+<body>
+    <!-- Header -->
+    <header class="dashboard-header">
+        <h1>Interactive Music Analytics Dashboard</h1>
+        <p class="subtitle">Cross-Platform Audio Feature Exploration</p>
+        <div class="controls">
+            <label for="color-mode">Color by:</label>
+            <select id="color-mode">
+                <option value="mode">Mode (Major/Minor)</option>
+                <option value="energy_%">Energy</option>
+                <option value="danceability_%">Danceability</option>
+                <option value="valence_%">Valence (Happiness)</option>
+                <option value="acousticness_%">Acousticness</option>
+            </select>
+        </div>
+    </header>
+
+    <!-- Main Dashboard Container -->
+    <div class="dashboard-container">
+        <!-- Left Panel: The Universe (60%) -->
+        <div class="panel left-panel">
+            <div class="panel-header">
+                <h2>The Universe</h2>
+                <p class="panel-description">Song clusters by audio features</p>
+            </div>
+            <div id="universe-view" class="view-container"></div>
+            <div class="panel-footer">
+                <span id="selection-count">All 953 songs selected</span>
+            </div>
+        </div>
+
+        <!-- Right Panel: Two views (40%) -->
+        <div class="panel right-panel">
+            <!-- Top: The Fingerprint -->
+            <div class="sub-panel">
+                <div class="panel-header">
+                    <h2>The Fingerprint</h2>
+                    <p class="panel-description">Average audio profile</p>
+                </div>
+                <div id="fingerprint-view" class="view-container"></div>
+            </div>
+
+            <!-- Bottom: The Battleground -->
+            <div class="sub-panel">
+                <div class="panel-header">
+                    <h2>The Battleground</h2>
+                    <p class="panel-description">Platform comparison</p>
+                </div>
+                <div id="battleground-view" class="view-container"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Indicator -->
+    <div id="loading" class="loading">
+        <div class="spinner"></div>
+        <p>Loading 953 songs...</p>
+    </div>
+
+    <!-- JavaScript Modules -->
+    <script src="src/js/universe.js"></script>
+    <script src="src/js/fingerprint.js"></script>
+    <script src="src/js/battleground.js"></script>
+    <script src="src/js/main.js"></script>
+</body>
+</html>
