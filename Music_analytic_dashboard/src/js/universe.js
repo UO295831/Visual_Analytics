@@ -41,6 +41,7 @@ class UniverseView {
         this.g = this.svg.append('g')
             .attr('transform', `translate(${this.margin.left},${this.margin.top})`);
 
+        // Create legend container
         this.legendContainer = this.g.append('g')
             .attr('class', 'legend-container')
             .attr('transform', `translate(${this.width + 20}, 20)`)
@@ -459,21 +460,21 @@ class UniverseView {
         this.legendContainer.selectAll('*').remove();
     
         const mode = this.colorMode;
-        const scale = this.colorScales[mode]; // CORREGIDO: Decía 'scarle'
+        const scale = this.colorScales[mode]; 
 
         this.legendContainer.append('text')
             .attr('x', 0)
             .attr('y', -10)
             .style('font-size', '12px')
             .style('font-weight', 'bold')
-            .attr('fill', 'white') // Añadido para que se vea sobre fondo oscuro
+            .attr('fill', 'white') 
             .text(mode.replace('_', ' ').toUpperCase());
 
         if (mode === 'mode') {
             const categories = scale.domain();
         
             categories.forEach((cat, i) => {
-                const row = this.legendContainer.append('g') // CORREGIDO: Decía 'appenf'
+                const row = this.legendContainer.append('g') 
                     .attr('transform', `translate(0, ${i * 20})`);
             
                 row.append('rect')
@@ -489,7 +490,7 @@ class UniverseView {
                 .text(cat);
             });
         } else {
-            const barWidth = 15; // CORREGIDO: Decía 'bandWidth' pero abajo usabas 'barWidth'
+            const barWidth = 15; 
             const barHeight = 80;
 
             this.svg.selectAll("defs").remove();

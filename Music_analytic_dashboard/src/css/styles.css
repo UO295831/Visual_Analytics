@@ -210,6 +210,55 @@ body {
     margin: 3px 0;
 }
 
+/*Song title*/
+.tooltip-title {
+    font-weight: 800;
+    font-size: 1.15rem;
+    margin-bottom: 2px;
+    color: #1DB954; 
+    line-height: 1.2;
+}
+
+/*Artist name */
+.tooltip-artist {
+    font-weight: 400;
+    font-size: 0.95rem;
+    color: #B3B3B3; 
+    margin-bottom: 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 8px;
+}
+
+.tooltip-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 5px 0;
+    font-size: 0.85rem;
+}
+
+.tooltip-label {
+    color: #A7A7A7;
+    font-weight: 500;
+}
+
+.tooltip-value {
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+    color: #FFFFFF;
+}
+
+.tooltip-footer {
+    margin-top: 12px;
+    font-size: 0.75rem;
+    color: #6A6A6A;
+    text-align: center;
+    font-style: italic;
+    border-top: 1px dashed rgba(255, 255, 255, 0.1);
+    padding-top: 8px;
+}
+
+
 /* ============================================================================
    SVG STYLES
    ============================================================================ */
