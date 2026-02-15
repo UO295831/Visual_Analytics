@@ -1,23 +1,23 @@
-// src/js/battleground.js - VERSIÓN COMPLETAMENTE NUEVA
+// src/js/battleground.js - VERSIÓN ARREGLADA
 // "Platform Preference by Audio Features"
 
 /**
  * BattlegroundView - Platform Preference Analysis
  * 
- * Muestra: ¿Qué características de audio prefiere cada plataforma?
- * 
- * En lugar de comparar cantidades (donde Spotify siempre gana),
- * compara CORRELACIONES entre features y presencia en plataforma.
- * 
- * Insight: "Apple Music favorece canciones acústicas, 
- *          Spotify favorece canciones con alta energía"
+ * FIXED:
+ * - Título ahora legible con más espacio
+ * - Leyenda reposicionada abajo del gráfico
+ * - Márgenes ajustados para evitar solapamientos
  */
 
 class BattlegroundView {
     constructor(containerId, data) {
         this.containerId = containerId;
         this.data = data;
-        this.margin = {top: 40, right: 30, bottom: 80, left: 120};
+        
+        // ARREGLADO: Aumentar margen superior y ajustar inferior
+        this.margin = {top: 60, right: 30, bottom: 100, left: 120};
+        //              ↑ 60 en lugar de 40    ↑ 100 en lugar de 80
         
         // Características de audio a analizar
         this.audioFeatures = [
@@ -61,8 +61,10 @@ class BattlegroundView {
     }
     
     update(selectedData) {
-        // Clear previous
+        // Clear previous (pero no el SVG completo)
         this.g.selectAll('*').remove();
+        this.svg.selectAll('text.title').remove();
+        this.svg.selectAll('defs').remove();
         
         // Render with new data
         this.render(selectedData);
@@ -76,7 +78,7 @@ class BattlegroundView {
         const validData = data.filter(d => 
             d[audioFeature] != null && 
             d[platformKey] != null &&
-            d[platformKey] > 0  // Solo canciones que están en la plataforma
+            d[platformKey] > 0
         );
         
         if (validData.length < 3) return 0;
@@ -84,7 +86,7 @@ class BattlegroundView {
         // Calcular correlación de Pearson simplificada
         const n = validData.length;
         const audioValues = validData.map(d => d[audioFeature]);
-        const platformValues = validData.map(d => Math.log10(d[platformKey] + 1)); // Log para normalizar
+        const platformValues = validData.map(d => Math.log10(d[platformKey] + 1));
         
         const audioMean = d3.mean(audioValues);
         const platformMean = d3.mean(platformValues);
@@ -108,7 +110,7 @@ class BattlegroundView {
     render(data) {
         const self = this;
         
-        // Calcular correlaciones para cada combinación
+        // Calcular correlaciones
         const heatmapData = [];
         
         this.audioFeatures.forEach(feature => {
@@ -144,22 +146,34 @@ class BattlegroundView {
             .domain([-1, 1])
             .interpolator(d3.interpolateRdYlGn);
         
-        // Dibujar título
+        // ARREGLADO: Dibujar título con más espacio
         this.svg.append('text')
+            .attr('class', 'title')
             .attr('x', this.margin.left + this.width / 2)
-            .attr('y', 20)
+            .attr('y', 25)  // Más espacio desde arriba (era 20)
             .attr('text-anchor', 'middle')
-            .style('font-size', '16px')
+            .style('font-size', '15px')  // Más pequeño (era 16px)
             .style('font-weight', 'bold')
+            .style('fill', '#333')
             .text(`Platform Preferences: ${data.length} Songs`);
         
-        // Dibujar axes
+        // Subtítulo explicativo (opcional)
+        this.svg.append('text')
+            .attr('class', 'title')
+            .attr('x', this.margin.left + this.width / 2)
+            .attr('y', 42)
+            .attr('text-anchor', 'middle')
+            .style('font-size', '11px')
+            .style('fill', '#666')
+            .text('Correlation between audio features and platform presence');
+        
+        // Dibujar ejes
         this.g.append('g')
             .attr('transform', `translate(0,${this.height})`)
             .call(d3.axisBottom(xScale))
             .selectAll('text')
-            .attr('transform', 'rotate(-45)')
-            .attr('text-anchor', 'end')
+            .attr('transform', 'rotate(0)')
+            .attr('text-anchor', 'middle')
             .attr('dx', '-0.5em')
             .attr('dy', '0.5em')
             .style('font-size', '11px')
@@ -213,7 +227,7 @@ class BattlegroundView {
             .delay((d, i) => i * 50 + 300)
             .attr('opacity', 1);
         
-        // Agregar leyenda
+        // ARREGLADO: Agregar leyenda ABAJO
         this.drawLegend(colorScale);
         
         // Interactividad
@@ -237,9 +251,7 @@ class BattlegroundView {
                 self.hideTooltip();
             })
             .on('click', function(event, d) {
-                // Trigger filter in Universe based on this feature
                 if (typeof handleFeatureClick === 'function') {
-                    // Convertir label a key
                     const featureKey = self.audioFeatures.find(f => f.label === d.feature).key;
                     handleFeatureClick(featureKey);
                 }
@@ -247,17 +259,20 @@ class BattlegroundView {
     }
     
     drawLegend(colorScale) {
-        const legendWidth = 200;
-        const legendHeight = 15;
-        const legendX = this.width - legendWidth - 10;
-        const legendY = -30;
+        // ARREGLADO: Leyenda ahora está ABAJO del gráfico
+        const legendWidth = 180;  // Más compacta
+        const legendHeight = 12;  // Más delgada
+        const legendX = this.width / 2 - legendWidth / 2;  // Centrada
+        const legendY = this.height + 55;  // ABAJO (positivo, no negativo)
         
         // Gradient
         const defs = this.svg.append('defs');
         const gradient = defs.append('linearGradient')
-            .attr('id', 'correlation-gradient')
+            .attr('id', 'correlation-gradient-' + Math.random().toString(36).substr(2, 9))
             .attr('x1', '0%')
             .attr('x2', '100%');
+        
+        const gradientId = gradient.attr('id');
         
         gradient.selectAll('stop')
             .data([
@@ -276,16 +291,28 @@ class BattlegroundView {
             .attr('y', legendY)
             .attr('width', legendWidth)
             .attr('height', legendHeight)
-            .style('fill', 'url(#correlation-gradient)')
-            .attr('stroke', '#ccc');
+            .style('fill', `url(#${gradientId})`)
+            .attr('stroke', '#999')
+            .attr('stroke-width', 1);
         
-        // Legend labels
+        // Legend title (arriba de la barra)
+        this.g.append('text')
+            .attr('x', legendX + legendWidth / 2)
+            .attr('y', legendY - 5)
+            .attr('text-anchor', 'middle')
+            .style('font-size', '11px')
+            .style('font-weight', 'bold')
+            .style('fill', '#333')
+            .text('Correlation');
+        
+        // Legend labels (a los lados)
         this.g.append('text')
             .attr('x', legendX - 5)
             .attr('y', legendY + legendHeight / 2)
             .attr('text-anchor', 'end')
             .attr('dominant-baseline', 'middle')
             .style('font-size', '10px')
+            .style('fill', '#666')
             .text('Negative');
         
         this.g.append('text')
@@ -294,15 +321,33 @@ class BattlegroundView {
             .attr('text-anchor', 'start')
             .attr('dominant-baseline', 'middle')
             .style('font-size', '10px')
+            .style('fill', '#666')
             .text('Positive');
+        
+        // Valores de referencia
+        this.g.append('text')
+            .attr('x', legendX)
+            .attr('y', legendY + legendHeight + 12)
+            .attr('text-anchor', 'middle')
+            .style('font-size', '9px')
+            .style('fill', '#999')
+            .text('-1.0');
         
         this.g.append('text')
             .attr('x', legendX + legendWidth / 2)
-            .attr('y', legendY - 5)
+            .attr('y', legendY + legendHeight + 12)
             .attr('text-anchor', 'middle')
-            .style('font-size', '11px')
-            .style('font-weight', 'bold')
-            .text('Correlation');
+            .style('font-size', '9px')
+            .style('fill', '#999')
+            .text('0.0');
+        
+        this.g.append('text')
+            .attr('x', legendX + legendWidth)
+            .attr('y', legendY + legendHeight + 12)
+            .attr('text-anchor', 'middle')
+            .style('font-size', '9px')
+            .style('fill', '#999')
+            .text('1.0');
     }
     
     showTooltip(event, d) {
