@@ -1,4 +1,15 @@
-// src/js/universe.js
+// src/js/universe.js - VERSION MEJORADA CON BRUSH Y ZOOM
+
+/**
+ * UniverseView - Enhanced t-SNE Scatter Plot
+ * 
+ * Features:
+ * - Brush selection (rectangular and lasso-like)
+ * - Zoom and pan (mouse wheel + drag)
+ * - Reset zoom button
+ * - Smooth transitions
+ * - Ghost effect on selection
+ */
 
 class UniverseView {
     constructor(containerId, data) {
@@ -6,6 +17,9 @@ class UniverseView {
         this.data = data;
         this.colorMode = 'mode';
         this.margin = {top: 20, right: 20, bottom: 60, left: 60};
+        
+        // Zoom state
+        this.currentTransform = d3.zoomIdentity;
         
         this.init();
     }
@@ -23,8 +37,13 @@ class UniverseView {
             .attr('width', bbox.width)
             .attr('height', bbox.height);
         
+        // Create main group
         this.g = this.svg.append('g')
             .attr('transform', `translate(${this.margin.left},${this.margin.top})`);
+        
+        // Create zoom group (this will be transformed)
+        this.zoomGroup = this.g.append('g')
+            .attr('class', 'zoom-group');
         
         // Create scales
         this.createScales();
@@ -32,10 +51,12 @@ class UniverseView {
         // Draw components
         this.drawAxes();
         this.drawPoints();
-        this.addBrush();
+        this.setupZoom();
+        this.setupBrush();
         this.createTooltip();
+        this.addResetButton();
         
-        console.log('✓ Universe view initialized');
+        console.log('✓ Universe view initialized with zoom and brush');
     }
     
     createScales() {
@@ -78,30 +99,39 @@ class UniverseView {
     
     drawAxes() {
         // X axis
-        this.g.append('g')
-            .attr('class', 'axis')
+        this.xAxisGroup = this.g.append('g')
+            .attr('class', 'axis x-axis')
             .attr('transform', `translate(0,${this.height})`)
-            .call(d3.axisBottom(this.xScale).ticks(8))
-            .append('text')
+            .call(d3.axisBottom(this.xScale).ticks(8));
+        
+        this.xAxisGroup.append('text')
             .attr('class', 'axis-label')
             .attr('x', this.width / 2)
             .attr('y', 40)
+            .attr('fill', 'black')
+            .style('font-size', '14px')
+            .style('font-weight', 'bold')
             .text('t-SNE Dimension 1');
         
         // Y axis
-        this.g.append('g')
-            .attr('class', 'axis')
-            .call(d3.axisLeft(this.yScale).ticks(8))
-            .append('text')
+        this.yAxisGroup = this.g.append('g')
+            .attr('class', 'axis y-axis')
+            .call(d3.axisLeft(this.yScale).ticks(8));
+        
+        this.yAxisGroup.append('text')
             .attr('class', 'axis-label')
             .attr('transform', 'rotate(-90)')
             .attr('x', -this.height / 2)
             .attr('y', -40)
+            .attr('fill', 'black')
+            .style('font-size', '14px')
+            .style('font-weight', 'bold')
             .text('t-SNE Dimension 2');
         
         // Grid
         this.g.append('g')
             .attr('class', 'grid')
+            .attr('opacity', 0.1)
             .call(d3.axisLeft(this.yScale)
                 .tickSize(-this.width)
                 .tickFormat('')
@@ -110,6 +140,7 @@ class UniverseView {
         this.g.append('g')
             .attr('class', 'grid')
             .attr('transform', `translate(0,${this.height})`)
+            .attr('opacity', 0.1)
             .call(d3.axisBottom(this.xScale)
                 .tickSize(-this.height)
                 .tickFormat('')
@@ -119,7 +150,7 @@ class UniverseView {
     drawPoints() {
         const self = this;
         
-        this.circles = this.g.selectAll('circle.song-point')
+        this.circles = this.zoomGroup.selectAll('circle.song-point')
             .data(this.data)
             .enter()
             .append('circle')
@@ -137,16 +168,18 @@ class UniverseView {
                     .transition()
                     .duration(200)
                     .attr('opacity', 1)
-                    .attr('stroke-width', 2);
+                    .attr('stroke-width', 2)
+                    .attr('r', self.sizeScale(d.streams) * 1.2);
                 
                 self.showTooltip(event, d);
             })
-            .on('mouseout', function() {
+            .on('mouseout', function(event, d) {
                 d3.select(this)
                     .transition()
                     .duration(200)
                     .attr('opacity', 0.7)
-                    .attr('stroke-width', 1);
+                    .attr('stroke-width', 1)
+                    .attr('r', self.sizeScale(d.streams));
                 
                 self.hideTooltip();
             });
@@ -160,47 +193,249 @@ class UniverseView {
         }
     }
     
-    addBrush() {
+    setupZoom() {
         const self = this;
         
-        const brush = d3.brush()
-            .extent([[0, 0], [this.width, this.height]])
-            .on('end', function(event) {
-                self.onBrush(event);
+        // Create zoom behavior
+        this.zoom = d3.zoom()
+            .scaleExtent([0.5, 10])  // Allow zoom from 0.5x to 10x
+            .translateExtent([[-100, -100], [this.width + 100, this.height + 100]])
+            .on('zoom', function(event) {
+                self.zoomed(event);
             });
         
-        this.g.append('g')
-            .attr('class', 'brush')
-            .call(brush);
+        // Apply zoom to SVG (but not to axes)
+        this.svg.call(this.zoom);
+        
+        // Prevent double-click zoom (we'll use it for reset instead)
+        this.svg.on('dblclick.zoom', null);
+        this.svg.on('dblclick', () => this.resetZoom());
     }
     
-    onBrush(event) {
+    zoomed(event) {
+        // Save current transform
+        this.currentTransform = event.transform;
+        
+        // Apply transform to zoom group (points)
+        this.zoomGroup.attr('transform', event.transform);
+        
+        // Update axes to match zoom level
+        this.xAxisGroup.call(
+            d3.axisBottom(event.transform.rescaleX(this.xScale)).ticks(8)
+        );
+        
+        this.yAxisGroup.call(
+            d3.axisLeft(event.transform.rescaleY(this.yScale)).ticks(8)
+        );
+        
+        // Update brush extent if needed
+        if (this.brushGroup) {
+            this.updateBrushExtent(event.transform);
+        }
+    }
+    
+    resetZoom() {
+        this.svg.transition()
+            .duration(750)
+            .call(this.zoom.transform, d3.zoomIdentity);
+        
+        console.log('✓ Zoom reset');
+    }
+    
+    setupBrush() {
+        const self = this;
+        
+        // Create brush behavior
+        this.brush = d3.brush()
+            .extent([[0, 0], [this.width, this.height]])
+            .on('start', function(event) {
+                // Clear previous selection styling
+                if (!event.sourceEvent || !event.sourceEvent.shiftKey) {
+                    // Normal brush - will replace selection
+                }
+            })
+            .on('brush', function(event) {
+                // Visual feedback during brushing
+                self.highlightBrushedPoints(event.selection, true);
+            })
+            .on('end', function(event) {
+                self.onBrushEnd(event);
+            });
+        
+        // Add brush to a separate layer (above zoom group)
+        this.brushGroup = this.g.append('g')
+            .attr('class', 'brush')
+            .call(this.brush);
+        
+        // Style brush
+        this.brushGroup.select('.overlay')
+            .style('cursor', 'crosshair');
+        
+        this.brushGroup.select('.selection')
+            .style('fill', '#667eea')
+            .style('fill-opacity', 0.2)
+            .style('stroke', '#667eea')
+            .style('stroke-width', 2);
+    }
+    
+    updateBrushExtent(transform) {
+        // Update brush extent to match zoom
+        // This keeps brush selection accurate during zoom
+        this.brush.extent([
+            [0, 0],
+            [this.width, this.height]
+        ]);
+        
+        this.brushGroup.call(this.brush);
+    }
+    
+    highlightBrushedPoints(selection, temporary = false) {
+        if (!selection) {
+            // No selection - show all
+            this.circles.attr('opacity', 0.7);
+            return;
+        }
+        
+        const [[x0, y0], [x1, y1]] = selection;
+        const transform = this.currentTransform;
+        
+        this.circles.attr('opacity', d => {
+            // Transform point coordinates according to current zoom
+            const x = transform.applyX(this.xScale(d.tsne_1));
+            const y = transform.applyY(this.yScale(d.tsne_2));
+            
+            const isSelected = x >= x0 && x <= x1 && y >= y0 && y <= y1;
+            return isSelected ? 0.9 : (temporary ? 0.3 : 0.1);
+        });
+    }
+    
+    onBrushEnd(event) {
         if (!event.selection) {
             // No selection - reset
             this.circles.attr('opacity', 0.7);
-            handleSelection(this.data);
+            if (typeof handleSelection === 'function') {
+                handleSelection(this.data);
+            }
             return;
         }
         
         const [[x0, y0], [x1, y1]] = event.selection;
+        const transform = this.currentTransform;
         
         // Find selected points
         const selected = [];
         
-        this.circles.attr('opacity', d => {
-            const cx = this.xScale(d.tsne_1);
-            const cy = this.yScale(d.tsne_2);
-            const isSelected = cx >= x0 && cx <= x1 && cy >= y0 && cy <= y1;
+        this.circles.each((d) => {
+            const x = transform.applyX(this.xScale(d.tsne_1));
+            const y = transform.applyY(this.yScale(d.tsne_2));
             
-            if (isSelected) {
+            if (x >= x0 && x <= x1 && y >= y0 && y <= y1) {
                 selected.push(d);
-                return 0.9;  // Selected
             }
-            return 0.1;  // Ghost effect!
         });
         
+        // Apply ghost effect
+        this.highlightBrushedPoints(event.selection, false);
+        
         // Notify other views
-        handleSelection(selected);
+        if (typeof handleSelection === 'function') {
+            handleSelection(selected);
+        }
+        
+        console.log(`✓ Selected ${selected.length} songs`);
+    }
+    
+    addResetButton() {
+        const self = this;
+        
+        // Add reset zoom button
+        const buttonGroup = this.svg.append('g')
+            .attr('class', 'reset-button')
+            .attr('transform', `translate(${this.margin.left + 10}, ${this.margin.top + 10})`)
+            .style('cursor', 'pointer')
+            .on('click', () => this.resetZoom())
+            .on('mouseover', function() {
+                d3.select(this).select('rect')
+                    .transition()
+                    .duration(200)
+                    .attr('fill', '#5566d9');
+            })
+            .on('mouseout', function() {
+                d3.select(this).select('rect')
+                    .transition()
+                    .duration(200)
+                    .attr('fill', '#667eea');
+            });
+        
+        buttonGroup.append('rect')
+            .attr('width', 80)
+            .attr('height', 30)
+            .attr('rx', 5)
+            .attr('fill', '#667eea')
+            .attr('opacity', 0.9);
+        
+        buttonGroup.append('text')
+            .attr('x', 40)
+            .attr('y', 19)
+            .attr('text-anchor', 'middle')
+            .attr('fill', 'white')
+            .style('font-size', '12px')
+            .style('font-weight', 'bold')
+            .style('pointer-events', 'none')
+            .text('Reset Zoom');
+        
+        // Add clear selection button
+        const clearButtonGroup = this.svg.append('g')
+            .attr('class', 'clear-button')
+            .attr('transform', `translate(${this.margin.left + 100}, ${this.margin.top + 10})`)
+            .style('cursor', 'pointer')
+            .on('click', () => this.clearSelection())
+            .on('mouseover', function() {
+                d3.select(this).select('rect')
+                    .transition()
+                    .duration(200)
+                    .attr('fill', '#d95566');
+            })
+            .on('mouseout', function() {
+                d3.select(this).select('rect')
+                    .transition()
+                    .duration(200)
+                    .attr('fill', '#ea6677');
+            });
+        
+        clearButtonGroup.append('rect')
+            .attr('width', 100)
+            .attr('height', 30)
+            .attr('rx', 5)
+            .attr('fill', '#ea6677')
+            .attr('opacity', 0.9);
+        
+        clearButtonGroup.append('text')
+            .attr('x', 50)
+            .attr('y', 19)
+            .attr('text-anchor', 'middle')
+            .attr('fill', 'white')
+            .style('font-size', '12px')
+            .style('font-weight', 'bold')
+            .style('pointer-events', 'none')
+            .text('Clear Selection');
+    }
+    
+    clearSelection() {
+        // Clear brush
+        this.brushGroup.call(this.brush.move, null);
+        
+        // Reset opacity
+        this.circles.transition()
+            .duration(300)
+            .attr('opacity', 0.7);
+        
+        // Notify other views
+        if (typeof handleSelection === 'function') {
+            handleSelection(this.data);
+        }
+        
+        console.log('✓ Selection cleared');
     }
     
     updateColorMode(mode) {
@@ -256,6 +491,9 @@ class UniverseView {
                 <div class="tooltip-row">
                     <span>Danceability:</span>
                     <span>${d['danceability_%']}%</span>
+                </div>
+                <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.3); font-size: 0.85em; color: #ffd700;">
+                    💡 Scroll to zoom | Drag to pan | Double-click to reset
                 </div>
             `)
             .style('left', (event.pageX + 10) + 'px')
