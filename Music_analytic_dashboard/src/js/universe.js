@@ -17,6 +17,8 @@ class UniverseView {
         this.data = data;
         this.colorMode = 'mode';
         this.margin = {top: 20, right: 120, bottom: 60, left: 60};
+
+        this.lassoMode = false;
         
         // Zoom state
         this.currentTransform = d3.zoomIdentity;
@@ -59,9 +61,9 @@ class UniverseView {
         this.setupZoom();
         this.setupBrush();
         this.createTooltip();
-        this.addResetButton();
+        this.addControlButtons();
         
-        console.log('✓ Universe view initialized with zoom and brush');
+        console.log(' Universe view initialized with toggle lasso mode');
     }
     
     createScales() {
@@ -210,11 +212,16 @@ class UniverseView {
                     return true;
                 }
                 
-                // Pan: SOLO con Shift presionado
+                // Pan con drag: SOLO si NO está en modo lasso
                 if (event.type === 'mousedown' || event.type === 'mousemove') {
-                    return event.shiftKey;  // ← LA CLAVE
+                    return !self.lassoMode;  // ← Clave: verificar modo
                 }
-                
+
+                // Touch events (móviles): SOLO si NO está en modo lasso
+                if (event.type.startsWith('touch')) {
+                    return !self.lassoMode;
+                }
+
                 return false;
             })
             .on('zoom', function(event) {
@@ -264,17 +271,19 @@ class UniverseView {
         // Create brush behavior
         this.brush = d3.brush()
             .extent([[0, 0], [this.width, this.height]])
+            .filter(function(event) {
+                // NUEVO: El brush solo funciona cuando está en modo lasso
+                return self.lassoMode;  // ← Clave: solo si lasso activado
+            })
             .on('start', function(event) {
-                // Clear previous selection styling
-                if (!event.sourceEvent || !event.sourceEvent.shiftKey) {
-                    // Normal brush - will replace selection
-                }
+                if (!self.lassoMode) return;
             })
             .on('brush', function(event) {
-                // Visual feedback during brushing
+                if (!self.lassoMode) return;
                 self.highlightBrushedPoints(event.selection, true);
             })
             .on('end', function(event) {
+                if (!self.lassoMode) return;
                 self.onBrushEnd(event);
             });
         
@@ -292,6 +301,46 @@ class UniverseView {
             .style('fill-opacity', 0.2)
             .style('stroke', '#667eea')
             .style('stroke-width', 2);
+        
+        this.brushGroup.style('display', 'none');
+    }
+
+        // NUEVO: Función para activar/desactivar modo lasso
+    toggleLassoMode() {
+        this.lassoMode = !this.lassoMode;
+        
+        if (this.lassoMode) {
+            // Activar modo lasso
+            this.brushGroup.style('display', null);
+            this.brushGroup.select('.overlay').style('cursor', 'crosshair');
+            this.svg.style('cursor', 'crosshair');
+            console.log('✓ Lasso mode: ON');
+        } else {
+            // Desactivar modo lasso
+            this.brushGroup.style('display', 'none');
+            this.brushGroup.call(this.brush.move, null); // Limpiar selección
+            this.svg.style('cursor', 'default');
+            console.log('✓ Lasso mode: OFF (pan/zoom enabled)');
+        }
+        
+        // Actualizar apariencia del botón
+        this.updateLassoButton();
+    }
+    
+    // NUEVO: Actualizar apariencia del botón lasso
+    updateLassoButton() {
+        const button = this.svg.select('.lasso-button rect');
+        const text = this.svg.select('.lasso-button text');
+        
+        if (this.lassoMode) {
+            // Modo activo: botón verde
+            button.attr('fill', '#10b981');
+            text.text('Lasso: ON');
+        } else {
+            // Modo inactivo: botón gris
+            button.attr('fill', '#6b7280');
+            text.text('Lasso: OFF');
+        }
     }
     
     updateBrushExtent(transform) {
@@ -361,13 +410,51 @@ class UniverseView {
         console.log(`✓ Selected ${selected.length} songs`);
     }
     
-    addResetButton() {
+    // NUEVO: Añadir botones de control
+    addControlButtons() {
         const self = this;
+        const buttonY = 10;
         
-        // Add reset zoom button
-        const buttonGroup = this.svg.append('g')
+        // Botón 1: Toggle Lasso Mode
+        const lassoButton = this.svg.append('g')
+            .attr('class', 'lasso-button')
+            .attr('transform', `translate(${this.margin.left + 10}, ${this.margin.top + buttonY})`)
+            .style('cursor', 'pointer')
+            .on('click', () => this.toggleLassoMode())
+            .on('mouseover', function() {
+                d3.select(this).select('rect')
+                    .transition()
+                    .duration(200)
+                    .attr('opacity', 1);
+            })
+            .on('mouseout', function() {
+                d3.select(this).select('rect')
+                    .transition()
+                    .duration(200)
+                    .attr('opacity', 0.9);
+            });
+        
+        lassoButton.append('rect')
+            .attr('width', 90)
+            .attr('height', 30)
+            .attr('rx', 5)
+            .attr('fill', '#6b7280')  // Gris por defecto
+            .attr('opacity', 0.9);
+        
+        lassoButton.append('text')
+            .attr('x', 45)
+            .attr('y', 19)
+            .attr('text-anchor', 'middle')
+            .attr('fill', 'white')
+            .style('font-size', '12px')
+            .style('font-weight', 'bold')
+            .style('pointer-events', 'none')
+            .text('Lasso: OFF');
+        
+        // Botón 2: Reset Zoom
+        const resetButton = this.svg.append('g')
             .attr('class', 'reset-button')
-            .attr('transform', `translate(${this.margin.left + 10}, ${this.margin.top + 10})`)
+            .attr('transform', `translate(${this.margin.left + 110}, ${this.margin.top + buttonY})`)
             .style('cursor', 'pointer')
             .on('click', () => this.resetZoom())
             .on('mouseover', function() {
@@ -383,14 +470,14 @@ class UniverseView {
                     .attr('fill', '#667eea');
             });
         
-        buttonGroup.append('rect')
+        resetButton.append('rect')
             .attr('width', 80)
             .attr('height', 30)
             .attr('rx', 5)
             .attr('fill', '#667eea')
             .attr('opacity', 0.9);
         
-        buttonGroup.append('text')
+        resetButton.append('text')
             .attr('x', 40)
             .attr('y', 19)
             .attr('text-anchor', 'middle')
@@ -400,10 +487,10 @@ class UniverseView {
             .style('pointer-events', 'none')
             .text('Reset Zoom');
         
-        // Add clear selection button
-        const clearButtonGroup = this.svg.append('g')
+        // Botón 3: Clear Selection
+        const clearButton = this.svg.append('g')
             .attr('class', 'clear-button')
-            .attr('transform', `translate(${this.margin.left + 100}, ${this.margin.top + 10})`)
+            .attr('transform', `translate(${this.margin.left + 200}, ${this.margin.top + buttonY})`)
             .style('cursor', 'pointer')
             .on('click', () => this.clearSelection())
             .on('mouseover', function() {
@@ -419,14 +506,14 @@ class UniverseView {
                     .attr('fill', '#ea6677');
             });
         
-        clearButtonGroup.append('rect')
+        clearButton.append('rect')
             .attr('width', 100)
             .attr('height', 30)
             .attr('rx', 5)
             .attr('fill', '#ea6677')
             .attr('opacity', 0.9);
         
-        clearButtonGroup.append('text')
+        clearButton.append('text')
             .attr('x', 50)
             .attr('y', 19)
             .attr('text-anchor', 'middle')
@@ -435,6 +522,14 @@ class UniverseView {
             .style('font-weight', 'bold')
             .style('pointer-events', 'none')
             .text('Clear Selection');
+        
+        // Indicador de instrucciones (pequeño)
+        this.svg.append('text')
+            .attr('x', this.margin.left + 10)
+            .attr('y', this.margin.top + buttonY + 45)
+            .style('font-size', '10px')
+            .style('fill', '#666')
+            .text('💡 Drag to pan | Scroll to zoom | Toggle Lasso to select');
     }
     
     clearSelection() {
@@ -562,6 +657,7 @@ class UniverseView {
             .duration(200)
             .style('opacity', 1);
         
+        // NUEVO: Tooltip actualizado con instrucciones de lasso
         this.tooltip
             .html(`
                 <strong>${d.track_name}</strong>
@@ -586,13 +682,13 @@ class UniverseView {
                     <span>${d['danceability_%']}%</span>
                 </div>
                 <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.3); font-size: 0.85em; color: #ffd700;">
-                    💡 Scroll to zoom | Drag to pan | Double-click to reset
+                    💡 Click "Lasso: OFF" button to enable selection
                 </div>
             `)
             .style('left', (event.pageX + 10) + 'px')
             .style('top', (event.pageY - 10) + 'px');
     }
-    
+      
     hideTooltip() {
         this.tooltip
             .transition()
