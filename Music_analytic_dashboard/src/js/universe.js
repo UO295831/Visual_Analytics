@@ -196,20 +196,31 @@ class UniverseView {
     setupZoom() {
         const self = this;
         
-        // Create zoom behavior
         this.zoom = d3.zoom()
-            .scaleExtent([0.5, 10])  // Allow zoom from 0.5x to 10x
+            .scaleExtent([0.5, 10])
             .translateExtent([[-100, -100], [this.width + 100, this.height + 100]])
+            .filter(function(event) {
+                // Zoom con scroll: SIEMPRE
+                if (event.type === 'wheel') {
+                    return true;
+                }
+                
+                // Pan: SOLO con Shift presionado
+                if (event.type === 'mousedown' || event.type === 'mousemove') {
+                    return event.shiftKey;  // ← LA CLAVE
+                }
+                
+                return false;
+            })
             .on('zoom', function(event) {
                 self.zoomed(event);
             });
         
-        // Apply zoom to SVG (but not to axes)
         this.svg.call(this.zoom);
-        
-        // Prevent double-click zoom (we'll use it for reset instead)
         this.svg.on('dblclick.zoom', null);
         this.svg.on('dblclick', () => this.resetZoom());
+        
+        console.log('✓ Zoom: Scroll=zoom, Shift+Drag=pan');
     }
     
     zoomed(event) {
