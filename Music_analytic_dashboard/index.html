@@ -26,6 +26,14 @@
                 <option value="valence_%">Valence (Happiness)</option>
                 <option value="acousticness_%">Acousticness</option>
             </select>
+            
+            <!-- NUEVO: Range Filter -->
+            <div id="range-filter" style="display: none; margin-left: 20px;">
+                <label id="range-label" style="font-size: 0.9em;">Range:</label>
+                <input type="range" id="range-min" min="0" max="100" value="0" style="width: 100px;">
+                <input type="range" id="range-max" min="0" max="100" value="100" style="width: 100px;">
+                <span id="range-values" style="font-family: monospace; font-weight: bold; color: #667eea;">0 - 100</span>
+            </div>
         </div>
     </header>
 

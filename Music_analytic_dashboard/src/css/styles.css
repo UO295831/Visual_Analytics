@@ -1,4 +1,4 @@
-/* src/css/styles.css */
+/* src/css/styles.css - COMPLETE FIX */
 
 /* ============================================================================
    RESET & BASICS
@@ -24,7 +24,7 @@ body {
 
 .dashboard-header {
     background: rgba(255, 255, 255, 0.95);
-    padding: 30px;
+    padding: 20px 30px;
     border-radius: 15px;
     margin-bottom: 20px;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
@@ -32,15 +32,15 @@ body {
 }
 
 .dashboard-header h1 {
-    font-size: 2.5em;
+    font-size: 2em;
     color: #667eea;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
 }
 
 .dashboard-header .subtitle {
-    font-size: 1.2em;
+    font-size: 1em;
     color: #666;
-    margin-bottom: 20px;
+    margin-bottom: 15px;
 }
 
 .controls {
@@ -48,7 +48,7 @@ body {
     justify-content: center;
     align-items: center;
     gap: 10px;
-    margin-top: 15px;
+    margin-top: 12px;
 }
 
 .controls select {
@@ -61,29 +61,32 @@ body {
 }
 
 /* ============================================================================
-   DASHBOARD LAYOUT
+   DASHBOARD LAYOUT - FIXED
    ============================================================================ */
 
 .dashboard-container {
     display: flex;
     gap: 20px;
-    max-width: 1800px;
+    max-width: 1900px;
     margin: 0 auto;
-    min-height: 800px; 
+    height: calc(100vh - 220px);
+    min-height: 650px;
 }
 
 .panel {
     background: rgba(255, 255, 255, 0.95);
     border-radius: 15px;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-    overflow: hidden;
+    overflow: visible;  /* CRITICAL: Changed from hidden */
+    display: flex;
+    flex-direction: column;
 }
 
 .left-panel {
     flex: 0 0 60%;
     display: flex;
     flex-direction: column;
-    min-height: 700px; 
+    height: 100%;
 }
 
 .right-panel {
@@ -91,6 +94,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: 20px;
+    height: 100%;
 }
 
 .sub-panel {
@@ -98,10 +102,10 @@ body {
     background: rgba(255, 255, 255, 0.95);
     border-radius: 15px;
     box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
-    overflow: hidden;
+    overflow: visible;  /* CRITICAL: Changed from hidden */
     display: flex;
     flex-direction: column;
-    min-height: 400px;  /* ← AÑADE ESTA LÍNEA */
+    min-height: 0;
 }
 
 /* ============================================================================
@@ -109,34 +113,56 @@ body {
    ============================================================================ */
 
 .panel-header {
-    padding: 20px;
+    padding: 15px 20px;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
+    flex-shrink: 0;
 }
 
 .panel-header h2 {
-    font-size: 1.5em;
-    margin-bottom: 5px;
+    font-size: 1.3em;
+    margin-bottom: 3px;
 }
 
 .panel-description {
-    font-size: 0.9em;
+    font-size: 0.85em;
     opacity: 0.9;
 }
 
 .view-container {
     flex: 1;
     padding: 20px;
-    overflow: hidden;
-    min-height: 500px;  
+    overflow: visible;  /* CRITICAL: Changed from hidden */
+    min-height: 0;
+    position: relative;
+}
+
+/* CRITICAL: Ensure proper sizing */
+#universe-view {
+    width: 100%;
+    height: 100%;
+    min-height: 500px;
+}
+
+#fingerprint-view {
+    width: 100%;
+    height: 100%;
+    min-height: 300px;
+}
+
+#battleground-view {
+    width: 100%;
+    height: 100%;
+    min-height: 300px;
 }
 
 .panel-footer {
-    padding: 15px 20px;
+    padding: 12px 20px;
     background: #f8f9fa;
     border-top: 1px solid #e0e0e0;
-    font-size: 0.9em;
+    font-size: 0.85em;
     color: #666;
+    flex-shrink: 0;
 }
 
 /* ============================================================================
@@ -185,14 +211,14 @@ body {
    ============================================================================ */
 
 .tooltip {
-    position: absolute;
+    position: fixed;  /* CHANGED: From absolute to fixed */
     background: rgba(0, 0, 0, 0.9);
     color: white;
     padding: 12px 15px;
     border-radius: 8px;
     pointer-events: none;
     font-size: 0.9em;
-    z-index: 1000;
+    z-index: 10000;  /* INCREASED */
     max-width: 300px;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
 }
@@ -210,7 +236,6 @@ body {
     margin: 3px 0;
 }
 
-/*Song title*/
 .tooltip-title {
     font-weight: 800;
     font-size: 1.15rem;
@@ -219,7 +244,6 @@ body {
     line-height: 1.2;
 }
 
-/*Artist name */
 .tooltip-artist {
     font-weight: 400;
     font-size: 0.95rem;
@@ -258,6 +282,29 @@ body {
     padding-top: 8px;
 }
 
+/* Tooltip Fixed Position */
+.tooltip {
+    position: fixed !important;
+    right: 30px !important;
+    top: 120px !important;
+    left: auto !important;
+    min-width: 300px;
+    max-width: 320px;
+    background: rgba(0, 0, 0, 0.95) !important;
+    border: 2px solid rgba(102, 126, 234, 0.4);
+}
+
+/* Indicador visual */
+.tooltip::before {
+    content: '🎵 Now Playing';
+    display: block;
+    font-size: 0.75em;
+    color: #667eea;
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    font-weight: bold;
+}
 
 /* ============================================================================
    SVG STYLES
@@ -285,12 +332,15 @@ body {
 @media (max-width: 1400px) {
     .dashboard-container {
         flex-direction: column;
+        height: auto;
+        min-height: 0;
     }
     
     .left-panel,
     .right-panel {
         flex: 1;
         width: 100%;
+        min-height: 500px;
     }
 }
 
@@ -306,4 +356,43 @@ body {
     .dashboard-header .subtitle {
         font-size: 1em;
     }
+}
+
+#range-filter {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 6px;
+    border: 2px solid #667eea;
+}
+
+#range-filter input[type="range"] {
+    -webkit-appearance: none;
+    height: 6px;
+    background: linear-gradient(to right, #667eea, #764ba2);
+    border-radius: 3px;
+    outline: none;
+}
+
+#range-filter input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    background: #667eea;
+    border: 2px solid white;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+#range-filter input[type="range"]::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    background: #667eea;
+    border: 2px solid white;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
 }

@@ -33,6 +33,58 @@ async function init() {
         AppState.views.fingerprint = new FingerprintView('#fingerprint-view', data);
         AppState.views.battleground = new BattlegroundView('#battleground-view', data);
         
+        // Setup range filter
+        const colorSelect = document.getElementById('color-mode');
+        const rangeFilter = document.getElementById('range-filter');
+        const rangeLabel = document.getElementById('range-label');
+        const rangeMin = document.getElementById('range-min');
+        const rangeMax = document.getElementById('range-max');
+        const rangeValues = document.getElementById('range-values');
+
+        colorSelect.addEventListener('change', function() {
+            const mode = this.value;
+            
+            if (mode === 'mode') {
+                rangeFilter.style.display = 'none';
+                if (AppState.views.universe) {
+                    AppState.views.universe.clearRangeFilter();
+                }
+            } else {
+                rangeFilter.style.display = 'flex';
+                const labels = {
+                    'energy_%': 'Energy:',
+                    'danceability_%': 'Dance:',
+                    'valence_%': 'Happy:',
+                    'acousticness_%': 'Acoustic:'
+                };
+                rangeLabel.textContent = labels[mode] || 'Range:';
+                rangeMin.value = 0;
+                rangeMax.value = 100;
+                rangeValues.textContent = '0 - 100';
+            }
+        });
+
+        function updateRangeFilter() {
+            let min = parseInt(rangeMin.value);
+            let max = parseInt(rangeMax.value);
+            
+            if (min > max) {
+                [min, max] = [max, min];
+                rangeMin.value = min;
+                rangeMax.value = max;
+            }
+            
+            rangeValues.textContent = `${min} - ${max}`;
+            
+            const mode = colorSelect.value;
+            if (mode !== 'mode' && AppState.views.universe) {
+                AppState.views.universe.applyRangeFilter(mode, min, max);
+            }
+        }
+
+        rangeMin.addEventListener('input', updateRangeFilter);
+        rangeMax.addEventListener('input', updateRangeFilter);
+
         // Set up event listeners
         setupEventListeners();
         

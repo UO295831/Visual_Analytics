@@ -16,7 +16,7 @@ class BattlegroundView {
         this.data = data;
         
         // ARREGLADO: Aumentar margen superior y ajustar inferior
-        this.margin = {top: 60, right: 30, bottom: 100, left: 120};
+        this.margin = {top: 50, right: 20, bottom: 70, left: 100};
         //              ↑ 60 en lugar de 40    ↑ 100 en lugar de 80
         
         // Características de audio a analizar

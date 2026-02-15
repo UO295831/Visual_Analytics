@@ -38,9 +38,13 @@ class FingerprintView {
         const container = d3.select(this.containerId);
         const bbox = container.node().getBoundingClientRect();
         
-        this.width = bbox.width;
-        this.height = bbox.height;
-        this.radius = Math.min(this.width, this.height) / 2 - 80;
+        // FORZAR TAMAÑO MÍNIMO
+        this.width = Math.max(bbox.width, 300);
+        this.height = Math.max(bbox.height, 300);
+        this.radius = Math.min(this.width, this.height) / 2 - 60;
+        
+        console.log('Fingerprint size:', this.width, 'x', this.height, 'radius:', this.radius);
+    
         
         // Create SVG
         this.svg = container.append('svg')

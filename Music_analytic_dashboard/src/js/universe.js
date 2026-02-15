@@ -16,7 +16,7 @@ class UniverseView {
         this.containerId = containerId;
         this.data = data;
         this.colorMode = 'mode';
-        this.margin = {top: 20, right: 120, bottom: 60, left: 60};
+        this.margin = {top: 70, right: 70, bottom: 60, left: 60};
 
         this.lassoMode = false;
         
@@ -60,12 +60,13 @@ class UniverseView {
         this.drawPoints();
         this.setupZoom();
         this.setupBrush();
+        this.drawMarginalDistributions();
         this.createTooltip();
         this.addControlButtons();
         
         console.log(' Universe view initialized with toggle lasso mode');
     }
-    
+
     createScales() {
         // X scale
         this.xScale = d3.scaleLinear()
@@ -153,6 +154,43 @@ class UniverseView {
                 .tickFormat('')
             );
     }
+    // Método 1: Aplicar filtro de rango
+    applyRangeFilter(feature, minVal, maxVal) {
+        this.circles
+            .transition()
+            .duration(300)
+            .attr('opacity', d => {
+                const value = d[feature];
+                return (value >= minVal && value <= maxVal) ? 0.9 : 0.15;
+            })
+            .attr('stroke-width', d => {
+                const value = d[feature];
+                return (value >= minVal && value <= maxVal) ? 2 : 1;
+            });
+        // Actualizar otros paneles
+        const filtered = this.data.filter(d => {
+            const value = d[feature];
+            return value >= minVal && value <= maxVal;
+        });
+
+        if (typeof handleSelection === 'function') {
+            handleSelection(filtered);
+        }
+        
+        console.log(`✓ Filtered: ${filtered.length} songs in range [${minVal}, ${maxVal}]`);
+    }
+    // Método 2: Limpiar filtro
+    clearRangeFilter() {
+        this.circles
+            .transition()
+            .duration(300)
+            .attr('opacity', 0.7)
+            .attr('stroke-width', 1);
+        
+        if (typeof handleSelection === 'function') {
+            handleSelection(this.data);
+        }
+    }
     
     drawPoints() {
         const self = this;
@@ -190,6 +228,107 @@ class UniverseView {
                 
                 self.hideTooltip();
             });
+    }
+    drawMarginalDistributions() {
+    const self = this;
+    
+    // Configuración
+    const marginSize = 40;  // Altura/ancho de los histogramas
+    const bins = 30;  // Número de barras
+    
+    // HISTOGRAMA SUPERIOR (distribución de t-SNE Dimension 1)
+    this.drawTopHistogram(marginSize, bins);
+    
+    // HISTOGRAMA DERECHO (distribución de t-SNE Dimension 2)
+    this.drawRightHistogram(marginSize, bins);
+    }
+
+    drawTopHistogram(height, numBins) {
+        // Crear escala de bins para X
+        const xExtent = d3.extent(this.data, d => d.tsne_1);
+        const xBins = d3.bin()
+            .domain(this.xScale.domain())
+            .thresholds(numBins)
+            .value(d => d.tsne_1);
+        
+        const binnedData = xBins(this.data);
+        
+        // Escala Y para el histograma (invertida porque va arriba)
+        const histYScale = d3.scaleLinear()
+            .domain([0, d3.max(binnedData, d => d.length)])
+            .range([0, height]);
+        
+        // Grupo para el histograma superior
+        const topHistGroup = this.g.insert('g', ':first-child')
+            .attr('class', 'top-histogram')
+            .attr('transform', `translate(0, ${-height - 5})`);
+        
+        // Dibujar barras
+        topHistGroup.selectAll('rect')
+            .data(binnedData)
+            .enter()
+            .append('rect')
+            .attr('x', d => this.xScale(d.x0))
+            .attr('y', d => height - histYScale(d.length))
+            .attr('width', d => Math.max(0, this.xScale(d.x1) - this.xScale(d.x0) - 1))
+            .attr('height', d => histYScale(d.length))
+            .attr('fill', '#667eea')
+            .attr('opacity', 0.6)
+            .attr('stroke', 'white')
+            .attr('stroke-width', 0.5);
+        
+        // Línea base
+        topHistGroup.append('line')
+            .attr('x1', 0)
+            .attr('x2', this.width)
+            .attr('y1', height)
+            .attr('y2', height)
+            .attr('stroke', '#999')
+            .attr('stroke-width', 1);
+    }
+
+    drawRightHistogram(width, numBins) {
+        // Crear escala de bins para Y
+        const yExtent = d3.extent(this.data, d => d.tsne_2);
+        const yBins = d3.bin()
+            .domain(this.yScale.domain())
+            .thresholds(numBins)
+            .value(d => d.tsne_2);
+        
+        const binnedData = yBins(this.data);
+        
+        // Escala X para el histograma
+        const histXScale = d3.scaleLinear()
+            .domain([0, d3.max(binnedData, d => d.length)])
+            .range([0, width]);
+        
+        // Grupo para el histograma derecho
+        const rightHistGroup = this.g.insert('g', ':first-child')
+            .attr('class', 'right-histogram')
+            .attr('transform', `translate(${this.width + 5}, 0)`);
+        
+        // Dibujar barras (horizontales)
+        rightHistGroup.selectAll('rect')
+            .data(binnedData)
+            .enter()
+            .append('rect')
+            .attr('x', 0)
+            .attr('y', d => this.yScale(d.x1))  // Invertido porque Y va de arriba a abajo
+            .attr('width', d => histXScale(d.length))
+            .attr('height', d => Math.max(0, this.yScale(d.x0) - this.yScale(d.x1) - 1))
+            .attr('fill', '#764ba2')
+            .attr('opacity', 0.6)
+            .attr('stroke', 'white')
+            .attr('stroke-width', 0.5);
+        
+        // Línea base
+        rightHistGroup.append('line')
+            .attr('x1', 0)
+            .attr('x2', 0)
+            .attr('y1', 0)
+            .attr('y2', this.height)
+            .attr('stroke', '#999')
+            .attr('stroke-width', 1);
     }
     
     getColor(d) {
@@ -239,10 +378,14 @@ class UniverseView {
         // Save current transform
         this.currentTransform = event.transform;
         
-        // Apply transform to zoom group (points)
+        // ANTES: Aplicar transform a zoom group Y actualizar ejes
+        // DESPUÉS: Solo aplicar transform a zoom group
+        
+        // Solo transformar los puntos, NO los ejes
         this.zoomGroup.attr('transform', event.transform);
         
-        // Update axes to match zoom level
+        // COMENTAR o ELIMINAR estas líneas (ejes NO se mueven):
+        /*
         this.xAxisGroup.call(
             d3.axisBottom(event.transform.rescaleX(this.xScale)).ticks(8)
         );
@@ -250,11 +393,9 @@ class UniverseView {
         this.yAxisGroup.call(
             d3.axisLeft(event.transform.rescaleY(this.yScale)).ticks(8)
         );
+        */
         
-        // Update brush extent if needed
-        if (this.brushGroup) {
-            this.updateBrushExtent(event.transform);
-        }
+        console.log(`Zoom: ${event.transform.k.toFixed(2)}x`);
     }
     
     resetZoom() {
@@ -684,11 +825,9 @@ class UniverseView {
                 <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.3); font-size: 0.85em; color: #ffd700;">
                     💡 Click "Lasso: OFF" button to enable selection
                 </div>
-            `)
-            .style('left', (event.pageX + 10) + 'px')
-            .style('top', (event.pageY - 10) + 'px');
+            `);
     }
-      
+
     hideTooltip() {
         this.tooltip
             .transition()
