@@ -16,7 +16,7 @@ class UniverseView {
         this.containerId = containerId;
         this.data = data;
         this.colorMode = 'mode';
-        this.margin = {top: 20, right: 20, bottom: 60, left: 60};
+        this.margin = {top: 20, right: 120, bottom: 60, left: 60};
         
         // Zoom state
         this.currentTransform = d3.zoomIdentity;
@@ -40,6 +40,10 @@ class UniverseView {
         // Create main group
         this.g = this.svg.append('g')
             .attr('transform', `translate(${this.margin.left},${this.margin.top})`);
+
+        this.legendContainer = this.g.append('g')
+            .attr('class', 'legend-container')
+            .attr('transform', `translate(${this.width + 20}, 20)`)
         
         // Create zoom group (this will be transformed)
         this.zoomGroup = this.g.append('g')
@@ -449,6 +453,81 @@ class UniverseView {
         console.log('✓ Selection cleared');
     }
     
+    updateLegend() {
+        if (!this.legendContainer) return;
+
+        this.legendContainer.selectAll('*').remove();
+    
+        const mode = this.colorMode;
+        const scale = this.colorScales[mode]; // CORREGIDO: Decía 'scarle'
+
+        this.legendContainer.append('text')
+            .attr('x', 0)
+            .attr('y', -10)
+            .style('font-size', '12px')
+            .style('font-weight', 'bold')
+            .attr('fill', 'white') // Añadido para que se vea sobre fondo oscuro
+            .text(mode.replace('_', ' ').toUpperCase());
+
+        if (mode === 'mode') {
+            const categories = scale.domain();
+        
+            categories.forEach((cat, i) => {
+                const row = this.legendContainer.append('g') // CORREGIDO: Decía 'appenf'
+                    .attr('transform', `translate(0, ${i * 20})`);
+            
+                row.append('rect')
+                .attr('width', 12)
+                .attr('height', 12)
+                .attr('fill', scale(cat));
+
+                row.append('text')
+                .attr('x', 20)
+                .attr('y', 10)
+                .style('font-size', '11px')
+                .attr('fill', 'white')
+                .text(cat);
+            });
+        } else {
+            const barWidth = 15; // CORREGIDO: Decía 'bandWidth' pero abajo usabas 'barWidth'
+            const barHeight = 80;
+
+            this.svg.selectAll("defs").remove();
+        
+            const gradientId = "legend-gradient-" + mode.replace('%', '');
+            const defs = this.svg.append("defs");
+            const linearGradient = defs.append("linearGradient")
+                .attr("id", gradientId)
+                .attr("x1", "0%").attr("y1", "100%") 
+                .attr("x2", "0%").attr("y2", "0%");  
+
+            [0, 0.5, 1].forEach(t => {
+                linearGradient.append("stop")
+                    .attr("offset", `${t * 100}%`)
+                    .attr("stop-color", scale(t * 100));
+            });
+
+            this.legendContainer.append("rect")
+                .attr("width", barWidth)
+                .attr("height", barHeight)
+                .style("fill", `url(#${gradientId})`);
+
+            this.legendContainer.append("text")
+                .attr("x", 20)
+                .attr("y", barHeight)
+                .style("font-size", "10px")
+                .attr('fill', 'white')
+                .text("0%");
+            
+            this.legendContainer.append("text")
+                .attr("x", 20)
+                .attr("y", 10)
+                .style("font-size", "10px")
+                .attr('fill', 'white')
+                .text("100%");
+        }
+    }
+
     updateColorMode(mode) {
         this.colorMode = mode;
         
@@ -456,6 +535,8 @@ class UniverseView {
             .transition()
             .duration(750)
             .attr('fill', d => this.getColor(d));
+
+            this.updateLegend();
     }
     
     highlightSongs(songs) {
