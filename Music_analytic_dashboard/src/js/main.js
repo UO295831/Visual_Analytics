@@ -19,13 +19,14 @@ const FilterState = {
 
 // Mapa de colores CONSISTENTE
 const FEATURE_COLORS = {
-    'energy_%': '#DC143C',         // 🔴 Rojo
-    'danceability_%': '#8B008B',   // 🟣 Morado
-    'valence_%': '#228B22',        // 🟢 Verde
-    'acousticness_%': '#1E90FF',   // 🔵 Azul
-    'liveness_%': '#FF8C00',       // 🟠 Naranja
-    'speechiness_%': '#20B2AA'     // 🟦 Cyan
+    'energy_%': '#CB181D',         // Matches interpolateReds
+    'danceability_%': '#6A51A3',   // Matches interpolatePurples
+    'valence_%': '#238B45',        // Matches interpolateGreens
+    'acousticness_%': '#2171B5',   // Matches interpolateBlues
+    'liveness_%': '#E6550D',       // Matches interpolateOranges
+    'speechiness_%': '#6A5ACD'     // Matches interpolateCool (purple side)
 };
+
 
 function getFeatureColor(featureKey) {
     return FEATURE_COLORS[featureKey] || '#666';
