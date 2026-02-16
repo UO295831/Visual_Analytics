@@ -112,7 +112,13 @@ class UniverseView {
                 .domain([0, 100]),
             
             'acousticness_%': d3.scaleSequential(d3.interpolateYlGnBu)
-                .domain([0, 100])
+                .domain([0, 100]),
+
+            'liveness_%': d3.scaleSequential(d3.interpolateTurbo)
+                .domain([0, 100]),
+
+            'speechiness_%': d3.scaleSequential(d3.interpolateCool)
+                .domain([0, 100])               
         };
     }
     
@@ -167,28 +173,50 @@ class UniverseView {
     }
     // Método 1: Aplicar filtro de rango
     applyRangeFilter(feature, minVal, maxVal) {
+        // Determinar qué canciones considerar
+        const baseData = this.currentSelection || this.data;
+        
         this.circles
             .transition()
             .duration(300)
             .attr('opacity', d => {
                 const value = d[feature];
-                return (value >= minVal && value <= maxVal) ? 0.9 : 0.15;
+                
+                // Si hay selección de lasso
+                if (this.currentSelection) {
+                    const isInSelection = this.currentSelection.includes(d);
+                    
+                    if (!isInSelection) {
+                        // No está en selección de lasso -> muy atenuado
+                        return 0.05;
+                    }
+                    
+                    // Está en selección -> aplicar filtro de rango
+                    return (value >= minVal && value <= maxVal) ? 0.9 : 0.15;
+                } else {
+                    // Sin selección de lasso -> filtro normal
+                    return (value >= minVal && value <= maxVal) ? 0.9 : 0.15;
+                }
             })
             .attr('stroke-width', d => {
+                if (this.currentSelection && !this.currentSelection.includes(d)) {
+                    return 1;
+                }
                 const value = d[feature];
                 return (value >= minVal && value <= maxVal) ? 2 : 1;
             });
-        // Actualizar otros paneles
-        const filtered = this.data.filter(d => {
+        
+        // Filtrar solo dentro de la selección actual
+        const filtered = baseData.filter(d => {
             const value = d[feature];
             return value >= minVal && value <= maxVal;
         });
-
+        
         if (typeof handleSelection === 'function') {
             handleSelection(filtered);
         }
         
-        console.log(`✓ Filtered: ${filtered.length} songs in range [${minVal}, ${maxVal}]`);
+        console.log(`✓ Range filter: ${filtered.length} of ${baseData.length} songs`);
     }
     // Método 2: Limpiar filtro
     clearRangeFilter() {
@@ -202,7 +230,6 @@ class UniverseView {
             handleSelection(this.data);
         }
     }
-    
     drawPoints() {
         const self = this;
         
@@ -220,25 +247,87 @@ class UniverseView {
             .attr('stroke-width', 1)
             .style('cursor', 'pointer')
             .on('mouseover', function(event, d) {
+                // SOLO cambiar opacidad y stroke, NO color
                 d3.select(this)
                     .transition()
                     .duration(200)
-                    .attr('opacity', 1)
-                    .attr('stroke-width', 2)
-                    .attr('r', self.sizeScale(d.streams) * 1.2);
+                    .attr('opacity', 1)  // Solo aumentar opacidad
+                    .attr('stroke-width', 3)
+                    .attr('stroke', '#FFD700');  // Borde dorado al hover
                 
                 self.showTooltip(event, d);
             })
             .on('mouseout', function(event, d) {
+                // Volver a la opacidad que tenía (respetar filtros)
+                const currentOpacity = parseFloat(d3.select(this).attr('opacity'));
+                const targetOpacity = currentOpacity > 0.8 ? 0.9 : 
+                                    currentOpacity > 0.5 ? 0.7 : 
+                                    currentOpacity;
+                
                 d3.select(this)
                     .transition()
                     .duration(200)
-                    .attr('opacity', 0.7)
-                    .attr('stroke-width', 1)
-                    .attr('r', self.sizeScale(d.streams));
+                    .attr('opacity', targetOpacity)  // Mantener opacidad actual
+                    .attr('stroke-width', currentOpacity > 0.8 ? 2 : 1)
+                    .attr('stroke', 'white');  // Volver a borde blanco
                 
                 self.hideTooltip();
             });
+    }
+
+    applyFilters(filteredData) {
+        const filteredSet = new Set(filteredData.map(d => d.track_name));
+        
+        this.circles
+            .transition()
+            .duration(300)
+            .attr('opacity', d => filteredSet.has(d.track_name) ? 0.9 : 0.1)
+            .attr('stroke-width', d => filteredSet.has(d.track_name) ? 2 : 1);
+    }
+    applyModeFilter(mode) {
+        // Determinar qué canciones considerar (respeta selección de lasso)
+        const baseData = this.currentSelection || this.data;
+        
+        this.circles
+            .transition()
+            .duration(300)
+            .attr('opacity', d => {
+                // Si hay selección de lasso
+                if (this.currentSelection) {
+                    const isInSelection = this.currentSelection.includes(d);
+                    
+                    if (!isInSelection) {
+                        return 0.05;  // Fuera de lasso
+                    }
+                    
+                    // Dentro de lasso -> aplicar filtro de modo
+                    if (mode === 'both') return 0.9;
+                    return (d.mode === mode) ? 0.9 : 0.15;
+                } else {
+                    // Sin lasso -> filtro normal
+                    if (mode === 'both') return 0.7;
+                    return (d.mode === mode) ? 0.9 : 0.15;
+                }
+            })
+            .attr('stroke-width', d => {
+                if (this.currentSelection && !this.currentSelection.includes(d)) {
+                    return 1;
+                }
+                if (mode === 'both') return 1;
+                return (d.mode === mode) ? 2 : 1;
+            });
+        
+        // Filtrar datos
+        const filtered = baseData.filter(d => {
+            if (mode === 'both') return true;
+            return d.mode === mode;
+        });
+        
+        if (typeof handleSelection === 'function') {
+            handleSelection(filtered);
+        }
+        
+        console.log(`✓ Mode filter: ${filtered.length} ${mode} songs`);
     }
     drawMarginalDistributions() {
     const self = this;
@@ -528,8 +617,9 @@ class UniverseView {
     
     onBrushEnd(event) {
         if (!event.selection) {
-            // No selection - reset
             this.circles.attr('opacity', 0.7);
+            this.currentSelection = null;  // AÑADIR
+            
             if (typeof handleSelection === 'function') {
                 handleSelection(this.data);
             }
@@ -538,8 +628,6 @@ class UniverseView {
         
         const [[x0, y0], [x1, y1]] = event.selection;
         const transform = this.currentTransform;
-        
-        // Find selected points
         const selected = [];
         
         this.circles.each((d) => {
@@ -551,10 +639,11 @@ class UniverseView {
             }
         });
         
-        // Apply ghost effect
         this.highlightBrushedPoints(event.selection, false);
         
-        // Notify other views
+        // GUARDAR selección actual
+        this.currentSelection = selected;
+        
         if (typeof handleSelection === 'function') {
             handleSelection(selected);
         }
@@ -865,6 +954,14 @@ class UniverseView {
                 <div class="tooltip-row">
                     <span>Danceability:</span>
                     <span>${d['danceability_%']}%</span>
+                </div>
+                <div class="tooltip-row">
+                    <span>Speechiness:</span>
+                    <span>${d['speechiness_%']}%</span>
+                </div>
+                <div class="tooltip-row">
+                    <span>Liveness:</span>
+                    <span>${d['liveness_%']}%</span>
                 </div>
                 <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.3); font-size: 0.85em; color: #ffd700;">
                     💡 Click "Lasso: OFF" button to enable selection

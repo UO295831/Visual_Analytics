@@ -11,6 +11,12 @@ const AppState = {
     views: {}                 // References to view instances
 };
 
+const FilterState = {
+    currentSelection: null,  // Canciones seleccionadas con lasso
+    modeFilter: 'both',      // Major, Minor, or both
+    rangeFilter: null        // {feature, min, max} o null
+};
+
 // ============================================================================
 // INITIALIZATION
 // ============================================================================
@@ -40,6 +46,53 @@ async function init() {
         const rangeMin = document.getElementById('range-min');
         const rangeMax = document.getElementById('range-max');
         const rangeValues = document.getElementById('range-values');
+        // Mode filter setup
+        const modeFilter = document.getElementById('mode-filter');
+        const btnMajor = document.getElementById('btn-major');
+        const btnMinor = document.getElementById('btn-minor');
+        const btnBoth = document.getElementById('btn-both');
+
+        let currentModeFilter = 'both';  // Estado global
+
+        // Mostrar/ocultar botones según selección
+        colorSelect.addEventListener('change', function() {
+            const mode = this.value;
+            
+            if (mode === 'mode') {
+                modeFilter.style.display = 'flex';  // Mostrar botones
+                rangeFilter.style.display = 'none';  // Ocultar slider
+            } else {
+                modeFilter.style.display = 'none';   // Ocultar botones
+                rangeFilter.style.display = 'flex';  // Mostrar slider
+                currentModeFilter = 'both';  // Reset
+                if (AppState.views.universe) {
+                    AppState.views.universe.applyModeFilter('both');
+                }
+            }
+        });
+
+        // Funcionalidad de los botones
+        function setModeFilter(mode) {
+            currentModeFilter = mode;
+            
+            // Actualizar UI
+            btnMajor.classList.remove('active');
+            btnMinor.classList.remove('active');
+            btnBoth.classList.remove('active');
+            
+            if (mode === 'Major') btnMajor.classList.add('active');
+            else if (mode === 'Minor') btnMinor.classList.add('active');
+            else btnBoth.classList.add('active');
+            
+            // Aplicar filtro
+            if (AppState.views.universe) {
+                AppState.views.universe.applyModeFilter(mode);
+            }
+        }
+
+        btnMajor.addEventListener('click', () => setModeFilter('Major'));
+        btnMinor.addEventListener('click', () => setModeFilter('Minor'));
+        btnBoth.addEventListener('click', () => setModeFilter('both'));
 
         colorSelect.addEventListener('change', function() {
             const mode = this.value;
@@ -63,6 +116,41 @@ async function init() {
                 rangeValues.textContent = '0 - 100';
             }
         });
+
+        function applyAllFilters() {
+            if (!AppState.views.universe) return;
+            
+            let filtered = AppState.allData;
+            
+            // 1. Filtro de lasso (base)
+            if (FilterState.currentSelection) {
+                filtered = FilterState.currentSelection;
+            }
+            
+            // 2. Filtro de modo
+            if (FilterState.modeFilter !== 'both') {
+                filtered = filtered.filter(d => d.mode === FilterState.modeFilter);
+            }
+            
+            // 3. Filtro de rango
+            if (FilterState.rangeFilter) {
+                const {feature, min, max} = FilterState.rangeFilter;
+                filtered = filtered.filter(d => {
+                    const value = d[feature];
+                    return value >= min && value <= max;
+                });
+            }
+            
+            // Aplicar visual
+            AppState.views.universe.applyFilters(filtered);
+            
+            // Actualizar otros paneles
+            if (typeof handleSelection === 'function') {
+                handleSelection(filtered);
+            }
+            
+            console.log(`✓ Total filtered: ${filtered.length} songs`);
+        }
 
         function updateRangeFilter() {
             let min = parseInt(rangeMin.value);

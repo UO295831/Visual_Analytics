@@ -25,7 +25,16 @@
                 <option value="danceability_%">Danceability</option>
                 <option value="valence_%">Valence (Happiness)</option>
                 <option value="acousticness_%">Acousticness</option>
+                <option value="liveness_%">Liveness</option>
+                <option value="speechiness_%">Speechiness</option>
             </select>
+
+            <!-- NUEVO: Mode Filter Buttons -->
+            <div id="mode-filter" style="display: none; margin-left: 15px;">
+                <button id="btn-major" class="mode-btn">Major</button>
+                <button id="btn-minor" class="mode-btn">Minor</button>
+                <button id="btn-both" class="mode-btn active">Both</button>
+            </div>
             
             <!-- NUEVO: Range Filter -->
             <div id="range-filter" style="display: none; margin-left: 20px;">

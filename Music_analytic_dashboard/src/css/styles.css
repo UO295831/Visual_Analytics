@@ -396,3 +396,41 @@ body {
     cursor: pointer;
     box-shadow: 0 2px 4px rgba(0,0,0,0.3);
 }
+
+#mode-filter {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+}
+
+.mode-btn {
+    padding: 6px 14px;
+    font-size: 0.9em;
+    font-weight: 600;
+    border: 2px solid #667eea;
+    background: white;
+    color: #667eea;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.mode-btn:hover {
+    background: rgba(102, 126, 234, 0.1);
+}
+
+.mode-btn.active {
+    background: #667eea;
+    color: white;
+    box-shadow: 0 2px 5px rgba(102, 126, 234, 0.3);
+}
+
+#btn-major.active {
+    background: #FF8C00;
+    border-color: #FF8C00;
+}
+
+#btn-minor.active {
+    background: #4169E1;
+    border-color: #4169E1;
+}

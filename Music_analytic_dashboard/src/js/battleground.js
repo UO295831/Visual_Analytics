@@ -25,7 +25,8 @@ class BattlegroundView {
             { key: 'danceability_%', label: 'Danceable' },
             { key: 'valence_%', label: 'Happy/Positive' },
             { key: 'acousticness_%', label: 'Acoustic' },
-            { key: 'speechiness_%', label: 'Lyric-Heavy' }
+            { key: 'speechiness_%', label: 'Lyric-Heavy' },
+            { key: 'liveness_%', label: 'Live' }
         ];
         
         // Plataformas
@@ -263,10 +264,59 @@ class BattlegroundView {
                 self.hideTooltip();
             })
             .on('click', function(event, d) {
+                // Convertir label a key
+                const featureKey = self.audioFeatures.find(f => f.label === d.feature).key;
+                
+                // 1. Cambiar el dropdown de color
+                const colorSelect = document.getElementById('color-mode');
+                if (colorSelect) {
+                    colorSelect.value = featureKey;
+                    
+                    // Disparar evento change para que se muestre el slider
+                    colorSelect.dispatchEvent(new Event('change'));
+                }
+                
+                // 2. Actualizar color en Universe
                 if (typeof handleFeatureClick === 'function') {
-                    const featureKey = self.audioFeatures.find(f => f.label === d.feature).key;
                     handleFeatureClick(featureKey);
                 }
+                
+                // 3. NUEVO: Configurar slider según correlación
+                setTimeout(() => {
+                    const rangeMin = document.getElementById('range-min');
+                    const rangeMax = document.getElementById('range-max');
+                    
+                    if (rangeMin && rangeMax) {
+                        const correlation = d.correlation;
+                        
+                        if (correlation > 0.5) {
+                            // Correlación positiva fuerte -> rango alto
+                            rangeMin.value = 60;
+                            rangeMax.value = 100;
+                        } else if (correlation > 0.2) {
+                            // Correlación positiva moderada
+                            rangeMin.value = 40;
+                            rangeMax.value = 80;
+                        } else if (correlation < -0.5) {
+                            // Correlación negativa fuerte -> rango bajo
+                            rangeMin.value = 0;
+                            rangeMax.value = 40;
+                        } else if (correlation < -0.2) {
+                            // Correlación negativa moderada
+                            rangeMin.value = 20;
+                            rangeMax.value = 60;
+                        } else {
+                            // Sin correlación clara -> todo el rango
+                            rangeMin.value = 0;
+                            rangeMax.value = 100;
+                        }
+                        
+                        // Disparar evento para actualizar
+                        rangeMin.dispatchEvent(new Event('input'));
+                    }
+                }, 100);
+                
+                console.log(`✓ Clicked: ${d.platform} × ${d.feature} (r=${d.correlation.toFixed(2)})`);
             });
     }
     
@@ -380,9 +430,11 @@ class BattlegroundView {
         this.tooltip
             .html(`
                 <strong>${d.platform} × ${d.feature}</strong><br>
-                Correlation: <strong>${d.correlation.toFixed(3)}</strong><br>
-                <em style="font-size: 0.9em; color: #ffd700;">${interpretation}</em><br>
-                <span style="font-size: 0.85em; color: #ccc;">Click to filter by this feature</span>
+                        Correlation: <strong>${d.correlation.toFixed(3)}</strong><br>
+                        <em style="font-size: 0.9em; color: #ffd700;">${interpretation}</em><br>
+                        <span style="font-size: 0.85em; color: #ccc;">
+                            💡 Click to filter by this feature
+                        </span>
             `)
             .style('left', (event.pageX + 10) + 'px')
             .style('top', (event.pageY - 10) + 'px');
