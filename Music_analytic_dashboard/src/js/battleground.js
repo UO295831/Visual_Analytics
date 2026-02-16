@@ -289,6 +289,7 @@ class BattlegroundView {
                 
                 // 3. CLAVE: Actualizar Universe DIRECTAMENTE
                 if (AppState.views && AppState.views.universe) {
+                    AppState.views.universe.colorMode = featureKey;
                     AppState.views.universe.updateColorMode(featureKey);
                 }
                 

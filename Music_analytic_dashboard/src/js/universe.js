@@ -895,14 +895,20 @@ class UniverseView {
     }
 
     updateColorMode(mode) {
+        console.log('🔵 updateColorMode called with:', mode);
+        
         this.colorMode = mode;
         
-        this.circles
-            .transition()
-            .duration(750)
-            .attr('fill', d => this.getColor(d));
-
-            this.updateLegend();
+        // CAMBIO: Actualizar SIN transición (inmediato)
+        this.circles.attr('fill', d => this.getColor(d));
+        
+        // Actualizar leyenda
+        this.updateLegend();
+        
+        // Actualizar histogramas marginales
+        this.drawMarginalDistributions();
+        
+        console.log('✅ Colors updated to', mode);
     }
     
     highlightSongs(songs) {
