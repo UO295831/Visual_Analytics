@@ -329,37 +329,117 @@ class UniverseView {
         console.log(`✓ Mode filter: ${filtered.length} ${mode} songs`);
     }
     drawMarginalDistributions() {
-    const self = this;
-    
-    // Configuración
-    const marginSize = 30;  // Altura/ancho de los histogramas
-    const bins = 25;  // Número de barras
-    
-    this.drawTopHistogram(marginSize, bins);
-    this.drawRightHistogram(marginSize, bins); 
+        this.g.selectAll(".marginal-hist").remove();
+
+        const featureColors = {
+            'energy_%': '#CB181D',         // Rojo
+            'danceability_%': '#6A51A3',   // Morado
+            'valence_%': '#238B45',        // Verde
+            'acousticness_%': '#2171B5',   // Azul
+            'liveness_%': '#E6550D',       // Naranja
+            'speechiness_%': '#6A5ACD',    // Púrpura suave
+            'mode': '#764ba2'              // Color por defecto (puedes poner el de "Major")
+        };
+
+        const baseColor = featureColors[this.colorMode] || '#764ba2';
+        
+        const endColor = d3.color(baseColor).brighter(1.5).formatHex(); 
+
+        let defs = this.svg.select("defs");
+        if (defs.empty()) defs = this.svg.append("defs");
+
+        defs.selectAll(".dynamic-bar-grad").remove();
+
+        const gradIdX = "grad-x-" + this.colorMode; // ID único basado en el modo
+        const gradientX = defs.append("linearGradient")
+            .attr("id", gradIdX)
+            .attr("class", "dynamic-bar-grad")
+            .attr("x1", "0%").attr("y1", "100%") // Empieza abajo (pegado al gráfico)
+            .attr("x2", "0%").attr("y2", "0%");   // Termina arriba
+
+        gradientX.append("stop").attr("offset", "0%").attr("stop-color", baseColor).attr("stop-opacity", 0.9);
+        gradientX.append("stop").attr("offset", "100%").attr("stop-color", endColor).attr("stop-opacity", 0.4);
+
+        const gradIdY = "grad-y-" + this.colorMode;
+        const gradientY = defs.append("linearGradient")
+            .attr("id", gradIdY)
+            .attr("class", "dynamic-bar-grad")
+            .attr("x1", "0%").attr("y1", "0%")   // Empieza izquierda
+            .attr("x2", "100%").attr("y2", "0%"); // Termina derecha
+
+        gradientY.append("stop").attr("offset", "0%").attr("stop-color", baseColor).attr("stop-opacity", 0.9);
+        gradientY.append("stop").attr("offset", "100%").attr("stop-color", endColor).attr("stop-opacity", 0.4);
+
+        const BIN_COUNT = 40; 
+
+        const histogramX = d3.bin()
+            .value(d => d.tsne_1)
+            .domain(this.xScale.domain())
+            .thresholds(this.xScale.ticks(BIN_COUNT));
+
+        const binsX = histogramX(this.data);
+
+        const yDistScale = d3.scaleLinear()
+            .domain([0, d3.max(binsX, d => d.length)])
+            .range([0, this.margin.top - 10]);
+
+        const topBars = this.g.append("g")
+            .attr("class", "marginal-hist marginal-x")
+            .attr("transform", `translate(0, ${-this.margin.top})`);
+
+        topBars.selectAll("rect")
+            .data(binsX)
+            .enter()
+            .append("rect")
+            .attr("x", d => this.xScale(d.x0) + 1)
+            .attr("width", d => Math.max(0, this.xScale(d.x1) - this.xScale(d.x0) - 1))
+            .attr("y", d => (this.margin.top - yDistScale(d.length)))
+            .attr("height", d => yDistScale(d.length))
+            .attr("fill", `url(#${gradIdX})`); // <--- APLICAMOS DEGRADADO X
+
+        const histogramY = d3.bin()
+            .value(d => d.tsne_2)
+            .domain(this.yScale.domain())
+            .thresholds(this.yScale.ticks(BIN_COUNT));
+
+        const binsY = histogramY(this.data);
+
+        const xDistScale = d3.scaleLinear()
+            .domain([0, d3.max(binsY, d => d.length)])
+            .range([0, this.margin.right - 10]);
+
+        const rightBars = this.g.append("g")
+            .attr("class", "marginal-hist marginal-y")
+            .attr("transform", `translate(${this.width}, 0)`);
+
+        rightBars.selectAll("rect")
+            .data(binsY)
+            .enter()
+            .append("rect")
+            .attr("y", d => this.yScale(d.x1) + 1)
+            .attr("height", d => Math.max(0, this.yScale(d.x0) - this.yScale(d.x1) - 1))
+            .attr("x", 0)
+            .attr("width", d => xDistScale(d.length))
+            .attr("fill", `url(#${gradIdY})`); 
     }
 
     drawTopHistogram(height, numBins) {
-        // Crear escala de bins para X
-        const xExtent = d3.extent(this.data, d => d.tsne_1);
+        // CAMBIO: Usar ticks para bins uniformes
         const xBins = d3.bin()
             .domain(this.xScale.domain())
-            .thresholds(numBins)
+            .thresholds(this.xScale.ticks(numBins))  // ← CAMBIO AQUÍ
             .value(d => d.tsne_1);
         
         const binnedData = xBins(this.data);
         
-        // Escala Y para el histograma (invertida porque va arriba)
         const histYScale = d3.scaleLinear()
             .domain([0, d3.max(binnedData, d => d.length)])
             .range([0, height]);
         
-        // Grupo para el histograma superior
-        const topHistGroup = this.g.insert('g', ':first-child')
+        const topHistGroup = this.g.append('g')  // CAMBIO: append en lugar de insert
             .attr('class', 'top-histogram')
             .attr('transform', `translate(0, ${-height - 5})`);
         
-        // Dibujar barras
         topHistGroup.selectAll('rect')
             .data(binnedData)
             .enter()
@@ -373,7 +453,6 @@ class UniverseView {
             .attr('stroke', 'white')
             .attr('stroke-width', 0.5);
         
-        // Línea base
         topHistGroup.append('line')
             .attr('x1', 0)
             .attr('x2', this.width)
@@ -384,32 +463,28 @@ class UniverseView {
     }
 
     drawRightHistogram(width, numBins) {
-        // Crear escala de bins para Y
-        const yExtent = d3.extent(this.data, d => d.tsne_2);
+        // CAMBIO: Usar ticks para bins uniformes
         const yBins = d3.bin()
             .domain(this.yScale.domain())
-            .thresholds(numBins)
+            .thresholds(this.yScale.ticks(numBins))  // ← CAMBIO AQUÍ
             .value(d => d.tsne_2);
         
         const binnedData = yBins(this.data);
         
-        // Escala X para el histograma
         const histXScale = d3.scaleLinear()
             .domain([0, d3.max(binnedData, d => d.length)])
             .range([0, width]);
         
-        // Grupo para el histograma derecho
-        const rightHistGroup = this.g.insert('g', ':first-child')
+        const rightHistGroup = this.g.append('g')  // CAMBIO: append en lugar de insert
             .attr('class', 'right-histogram')
             .attr('transform', `translate(${this.width + 5}, 0)`);
         
-        // Dibujar barras (horizontales)
         rightHistGroup.selectAll('rect')
             .data(binnedData)
             .enter()
             .append('rect')
             .attr('x', 0)
-            .attr('y', d => this.yScale(d.x1))  // Invertido porque Y va de arriba a abajo
+            .attr('y', d => this.yScale(d.x1))
             .attr('width', d => histXScale(d.length))
             .attr('height', d => Math.max(0, this.yScale(d.x0) - this.yScale(d.x1) - 1))
             .attr('fill', '#764ba2')
@@ -417,7 +492,6 @@ class UniverseView {
             .attr('stroke', 'white')
             .attr('stroke-width', 0.5);
         
-        // Línea base
         rightHistGroup.append('line')
             .attr('x1', 0)
             .attr('x2', 0)
