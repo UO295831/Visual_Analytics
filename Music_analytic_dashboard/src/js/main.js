@@ -17,6 +17,20 @@ const FilterState = {
     rangeFilter: null        // {feature, min, max} o null
 };
 
+// Mapa de colores CONSISTENTE
+const FEATURE_COLORS = {
+    'energy_%': '#DC143C',         // 🔴 Rojo
+    'danceability_%': '#8B008B',   // 🟣 Morado
+    'valence_%': '#228B22',        // 🟢 Verde
+    'acousticness_%': '#1E90FF',   // 🔵 Azul
+    'liveness_%': '#FF8C00',       // 🟠 Naranja
+    'speechiness_%': '#20B2AA'     // 🟦 Cyan
+};
+
+function getFeatureColor(featureKey) {
+    return FEATURE_COLORS[featureKey] || '#666';
+}
+
 // ============================================================================
 // INITIALIZATION
 // ============================================================================
@@ -40,6 +54,7 @@ async function init() {
         AppState.views.battleground = new BattlegroundView('#battleground-view', data);
         
         // Setup range filter
+        document.getElementById('mode-filter').style.display = 'flex';
         const colorSelect = document.getElementById('color-mode');
         const rangeFilter = document.getElementById('range-filter');
         const rangeLabel = document.getElementById('range-label');

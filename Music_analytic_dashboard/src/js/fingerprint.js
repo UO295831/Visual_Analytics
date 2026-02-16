@@ -51,7 +51,7 @@ class FingerprintView {
 
         // 4. RADIO DEL GRÁFICO (La clave del tamaño)
         // Calculamos el radio máximo posible para que quepa en nuestro lienzo virtual
-        this.radius = Math.min(this.width, this.height) / 2;
+       this.radius = Math.min(this.width, this.height) / 1.3;
 
         // 5. SVG RESPONSIVO
         this.svg = container.append('svg')

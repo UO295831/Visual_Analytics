@@ -16,7 +16,7 @@ class UniverseView {
         this.containerId = containerId;
         this.data = data;
         this.colorMode = 'mode';
-        this.margin = {top: 70, right: 70, bottom: 60, left: 60};
+        this.margin = {top: 50, right: 50, bottom: 55, left: 55};
 
         this.lassoMode = false;
         
@@ -32,7 +32,6 @@ class UniverseView {
         
         this.width = bbox.width - this.margin.left - this.margin.right;
         this.height = bbox.height - this.margin.top - this.margin.bottom;
-        
         // 1. SVG
         this.svg = container.append('svg')
             .attr('width', bbox.width)
@@ -333,8 +332,8 @@ class UniverseView {
     const self = this;
     
     // Configuración
-    const marginSize = 40;  // Altura/ancho de los histogramas
-    const bins = 30;  // Número de barras
+    const marginSize = 30;  // Altura/ancho de los histogramas
+    const bins = 25;  // Número de barras
     
     // HISTOGRAMA SUPERIOR (distribución de t-SNE Dimension 1)
     this.drawTopHistogram(marginSize, bins);

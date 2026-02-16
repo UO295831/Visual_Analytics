@@ -16,7 +16,7 @@ class BattlegroundView {
         this.data = data;
         
         // ARREGLADO: Aumentar margen superior y ajustar inferior
-        this.margin = {top: 50, right: 20, bottom: 70, left: 100};
+        this.margin = {top: 45, right: 15, bottom: 65, left: 95};
         //              ↑ 60 en lugar de 40    ↑ 100 en lugar de 80
         
         // Características de audio a analizar
@@ -42,13 +42,13 @@ class BattlegroundView {
     init() {
         const container = d3.select(this.containerId);
         // Get container dimensions
-        const totalWidth = 850;  
-        const totalHeight = 250; 
+        const totalWidth = 900;  
+        const totalHeight = 300; 
 
         // 2. AJUSTAMOS MÁRGENES
         // Left: 110px para que se lean bien los nombres de las filas (Energy, Danceability...)
         // Bottom: 40px para la leyenda
-        this.margin = {top: -40, right: 20, bottom: 70, left: 110};
+        this.margin = {top: -30, right: 15, bottom: 60, left: 100};
 
         // Calculamos el área donde irán las cajitas de colores
         this.width = totalWidth - this.margin.left - this.margin.right;
@@ -163,9 +163,9 @@ class BattlegroundView {
         this.svg.append('text')
             .attr('class', 'title')
             .attr('x', this.margin.left + this.width / 2)
-            .attr('y', -75)  // Más espacio desde arriba (era 20)
+            .attr('y', -60)  // Más espacio desde arriba (era 20)
             .attr('text-anchor', 'middle')
-            .style('font-size', '15px')  // Más pequeño (era 16px)
+            .style('font-size', '14px')  // Más pequeño (era 16px)
             .style('font-weight', 'bold')
             .style('fill', '#333')
             .text(`Platform Preferences: ${data.length} Songs`);
@@ -174,9 +174,9 @@ class BattlegroundView {
         this.svg.append('text')
             .attr('class', 'title')
             .attr('x', this.margin.left + this.width / 2)
-            .attr('y', -60)
+            .attr('y', -45)
             .attr('text-anchor', 'middle')
-            .style('font-size', '11px')
+            .style('font-size', '10px')
             .style('fill', '#666')
             .text('Correlation between audio features and platform presence');
         
@@ -188,14 +188,14 @@ class BattlegroundView {
             .attr('transform', 'rotate(0)')
             .attr('text-anchor', 'middle')
             .attr('dx', '-0.5em')
-            .attr('dy', '0.5em')
-            .style('font-size', '11px')
+            .attr('dy', '1em')
+            .style('font-size', '15px')
             .style('font-weight', 'bold');
         
         this.g.append('g')
             .call(d3.axisLeft(yScale))
             .selectAll('text')
-            .style('font-size', '11px');
+            .style('font-size', '15px');
         
         // Dibujar celdas del heatmap
         const cells = this.g.selectAll('rect.cell')
@@ -266,6 +266,17 @@ class BattlegroundView {
             .on('click', function(event, d) {
                 // Convertir label a key
                 const featureKey = self.audioFeatures.find(f => f.label === d.feature).key;
+                const featureColor = getFeatureColor(featureKey);
+                    // Resaltar TODA LA FILA con el color de la feature
+                    
+                self.g.selectAll('rect.cell')
+                    .attr('stroke', 'white')
+                    .attr('stroke-width', 2);
+                
+                self.g.selectAll('rect.cell')
+                    .filter(cell => cell.feature === d.feature)
+                    .attr('stroke', featureColor)  // Color consistente
+                    .attr('stroke-width', 4);
                 
                 // 1. Cambiar el dropdown de color
                 const colorSelect = document.getElementById('color-mode');
@@ -322,10 +333,10 @@ class BattlegroundView {
     
     drawLegend(colorScale) {
         // ARREGLADO: Leyenda ahora está ABAJO del gráfico
-        const legendWidth = 180;  // Más compacta
-        const legendHeight = 12;  // Más delgada
-        const legendX = this.width / 2 - legendWidth / 2;  // Centrada
-        const legendY = this.height + 55;  // ABAJO (positivo, no negativo)
+        const legendWidth = 200;  // Más compacta
+        const legendHeight = 25;  // Más delgada
+        const legendX = this.width - legendWidth - 10;  // DERECHA
+        const legendY = -70;  // ARRIBA (negativo)
         
         // Gradient
         const defs = this.svg.append('defs');
