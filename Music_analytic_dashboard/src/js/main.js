@@ -24,7 +24,8 @@ const FEATURE_COLORS = {
     'valence_%': '#238B45',        // Matches interpolateGreens
     'acousticness_%': '#2171B5',   // Matches interpolateBlues
     'liveness_%': '#E6550D',       // Matches interpolateOranges
-    'speechiness_%': '#6A5ACD'     // Matches interpolateCool (purple side)
+    'speechiness_%': '#6A5ACD',     // Matches interpolateCool (purple side)
+    'mode': '#764ba2'              // Color por defecto (puedes poner el de "Major")
 };
 
 
@@ -124,7 +125,9 @@ async function init() {
                     'energy_%': 'Energy:',
                     'danceability_%': 'Dance:',
                     'valence_%': 'Happy:',
-                    'acousticness_%': 'Acoustic:'
+                    'acousticness_%': 'Acoustic:',
+                    'speechiness_%': 'Speech',
+                    'liveness_%': 'Live'
                 };
                 rangeLabel.textContent = labels[mode] || 'Range:';
                 rangeMin.value = 0;

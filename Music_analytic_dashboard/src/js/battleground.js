@@ -267,32 +267,37 @@ class BattlegroundView {
                 // Convertir label a key
                 const featureKey = self.audioFeatures.find(f => f.label === d.feature).key;
                 const featureColor = getFeatureColor(featureKey);
-                    // Resaltar TODA LA FILA con el color de la feature
-                    
+                
+                // NUEVO: Resaltar toda la fila con su color
                 self.g.selectAll('rect.cell')
                     .attr('stroke', 'white')
                     .attr('stroke-width', 2);
                 
                 self.g.selectAll('rect.cell')
                     .filter(cell => cell.feature === d.feature)
-                    .attr('stroke', featureColor)  // Color consistente
+                    .attr('stroke', featureColor)
                     .attr('stroke-width', 4);
                 
-                // 1. Cambiar el dropdown de color
+                // 1. Actualizar AppState
+                AppState.colorMode = featureKey;
+                
+                // 2. Cambiar el dropdown
                 const colorSelect = document.getElementById('color-mode');
                 if (colorSelect) {
                     colorSelect.value = featureKey;
-                    
-                    // Disparar evento change para que se muestre el slider
+                }
+                
+                // 3. CLAVE: Actualizar Universe DIRECTAMENTE
+                if (AppState.views && AppState.views.universe) {
+                    AppState.views.universe.updateColorMode(featureKey);
+                }
+                
+                // 4. Disparar evento change (para mostrar slider)
+                if (colorSelect) {
                     colorSelect.dispatchEvent(new Event('change'));
                 }
                 
-                // 2. Actualizar color en Universe
-                if (typeof handleFeatureClick === 'function') {
-                    handleFeatureClick(featureKey);
-                }
-                
-                // 3. NUEVO: Configurar slider según correlación
+                // 5. Configurar slider según correlación
                 setTimeout(() => {
                     const rangeMin = document.getElementById('range-min');
                     const rangeMax = document.getElementById('range-max');
@@ -301,28 +306,22 @@ class BattlegroundView {
                         const correlation = d.correlation;
                         
                         if (correlation > 0.5) {
-                            // Correlación positiva fuerte -> rango alto
                             rangeMin.value = 60;
                             rangeMax.value = 100;
                         } else if (correlation > 0.2) {
-                            // Correlación positiva moderada
                             rangeMin.value = 40;
                             rangeMax.value = 80;
                         } else if (correlation < -0.5) {
-                            // Correlación negativa fuerte -> rango bajo
                             rangeMin.value = 0;
                             rangeMax.value = 40;
                         } else if (correlation < -0.2) {
-                            // Correlación negativa moderada
                             rangeMin.value = 20;
                             rangeMax.value = 60;
                         } else {
-                            // Sin correlación clara -> todo el rango
                             rangeMin.value = 0;
                             rangeMax.value = 100;
                         }
                         
-                        // Disparar evento para actualizar
                         rangeMin.dispatchEvent(new Event('input'));
                     }
                 }, 100);
@@ -332,7 +331,6 @@ class BattlegroundView {
     }
     
     drawLegend(colorScale) {
-        // ARREGLADO: Leyenda ahora está ABAJO del gráfico
         const legendWidth = 200;  // Más compacta
         const legendHeight = 25;  // Más delgada
         const legendX = this.width - legendWidth - 10;  // DERECHA
