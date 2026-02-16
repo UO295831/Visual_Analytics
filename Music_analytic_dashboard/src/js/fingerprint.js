@@ -173,9 +173,25 @@ class FingerprintView {
                 .attr('transform', `translate(${labelX}, ${labelY})`)
                 .style('cursor', 'pointer')
                 .on('click', function() {
-                    // Trigger feature click in main app
-                    if (typeof handleFeatureClick === 'function') {
-                        handleFeatureClick(feature.key);
+                    const featureKey = feature.key;
+                    
+                    // 1. Actualizar AppState
+                    AppState.colorMode = featureKey;
+                    
+                    // 2. Cambiar dropdown
+                    const colorSelect = document.getElementById('color-mode');
+                    if (colorSelect) {
+                        colorSelect.value = featureKey;
+                    }
+                    
+                    // 3. Actualizar Universe directamente
+                    if (AppState.views && AppState.views.universe) {
+                        AppState.views.universe.updateColorMode(featureKey);
+                    }
+                    
+                    // 4. CLAVE: Disparar evento change para mostrar el slider
+                    if (colorSelect) {
+                        colorSelect.dispatchEvent(new Event('change'));
                     }
                 })
                 .on('mouseover', function() {
