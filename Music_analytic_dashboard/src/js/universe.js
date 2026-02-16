@@ -335,11 +335,8 @@ class UniverseView {
     const marginSize = 30;  // Altura/ancho de los histogramas
     const bins = 25;  // Número de barras
     
-    // HISTOGRAMA SUPERIOR (distribución de t-SNE Dimension 1)
     this.drawTopHistogram(marginSize, bins);
-    
-    // HISTOGRAMA DERECHO (distribución de t-SNE Dimension 2)
-    this.drawRightHistogram(marginSize, bins);
+    this.drawRightHistogram(marginSize, bins); 
     }
 
     drawTopHistogram(height, numBins) {
