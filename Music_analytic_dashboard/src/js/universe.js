@@ -27,35 +27,41 @@ class UniverseView {
     }
     
     init() {
-        // Get container
         const container = d3.select(this.containerId);
         const bbox = container.node().getBoundingClientRect();
         
         this.width = bbox.width - this.margin.left - this.margin.right;
         this.height = bbox.height - this.margin.top - this.margin.bottom;
         
-        // Create SVG
+        // 1. SVG
         this.svg = container.append('svg')
             .attr('width', bbox.width)
             .attr('height', bbox.height);
+            
+        // 2. DEFINIR MÁSCARA (CLIP PATH)
+        this.svg.append("defs").append("clipPath")
+            .attr("id", "universe-clip")
+            .append("rect")
+            .attr("width", this.width)
+            .attr("height", this.height);
         
-        // Create main group
+        // 3. GRUPO PRINCIPAL (Márgenes)
         this.g = this.svg.append('g')
             .attr('transform', `translate(${this.margin.left},${this.margin.top})`);
 
-        // Create legend container
         this.legendContainer = this.g.append('g')
             .attr('class', 'legend-container')
-            .attr('transform', `translate(${this.width + 20}, 20)`)
-        
-        // Create zoom group (this will be transformed)
-        this.zoomGroup = this.g.append('g')
+            .attr('transform', `translate(${this.width - 80}, -47)`);
+                
+        // Window
+        const clippedFrame = this.g.append("g")
+             .attr("clip-path", "url(#universe-clip)");
+
+        // zoomGroup moves behind the window
+        this.zoomGroup = clippedFrame.append('g')
             .attr('class', 'zoom-group');
-        
-        // Create scales
+                    
         this.createScales();
-        
-        // Draw components
         this.drawAxes();
         this.drawPoints();
         this.setupZoom();
@@ -64,28 +70,33 @@ class UniverseView {
         this.createTooltip();
         this.addControlButtons();
         
-        console.log(' Universe view initialized with toggle lasso mode');
+        console.log('Universe view initialized (Clipped)');
     }
 
     createScales() {
+        const xExtent = d3.extent(this.data, d => d.tsne_1);
+        const yExtent = d3.extent(this.data, d => d.tsne_2);
+
+        const xPadding = (xExtent[1] - xExtent[0]) * 0.10;
+        const yPadding = (yExtent[1] - yExtent[0]) * 0.10;
+        
         // X scale
         this.xScale = d3.scaleLinear()
-            .domain(d3.extent(this.data, d => d.tsne_1))
-            .range([0, this.width])
-            .nice();
+            // Restamos padding al mínimo y sumamos al máximo
+            .domain([xExtent[0] - xPadding, xExtent[1] + xPadding])
+            .range([0, this.width]); 
         
         // Y scale
         this.yScale = d3.scaleLinear()
-            .domain(d3.extent(this.data, d => d.tsne_2))
-            .range([this.height, 0])
-            .nice();
-        
+            .domain([yExtent[0] - yPadding, yExtent[1] + yPadding])
+            .range([this.height, 0]);
+                
         // Size scale (by streams)
         this.sizeScale = d3.scaleSqrt()
             .domain(d3.extent(this.data, d => d.streams))
             .range([3, 20]);
         
-        // Color scales
+        // Color scales (Tus paletas originales)
         this.colorScales = {
             'mode': d3.scaleOrdinal()
                 .domain(['Major', 'Minor'])
@@ -693,75 +704,108 @@ class UniverseView {
     updateLegend() {
         if (!this.legendContainer) return;
 
+        // Limpiamos la leyenda anterior
         this.legendContainer.selectAll('*').remove();
     
         const mode = this.colorMode;
-        const scale = this.colorScales[mode]; 
+        // Si no hay escala definida para este modo, salimos
+        if (!this.colorScales[mode]) return; 
 
+        const scale = this.colorScales[mode]; 
+        
+        // --- CONFIGURACIÓN DE TAMAÑO ---
+        // Hacemos la barra más ancha (150px) y fina (12px)
+        const barWidth = 150; 
+        const barHeight = 12;
+
+        // --- 1. TÍTULO (Centrado encima de la barra) ---
         this.legendContainer.append('text')
-            .attr('x', 0)
-            .attr('y', -10)
+            .attr('x', barWidth / 2) // Centrado horizontalmente respecto a la barra
+            .attr('y', -8)           // Un poco por encima de la barra
+            .attr('text-anchor', 'middle') // Alineación centro
             .style('font-size', '12px')
             .style('font-weight', 'bold')
-            .attr('fill', 'white') 
-            .text(mode.replace('_', ' ').toUpperCase());
+            .attr('fill', 'black') 
+            .text(mode.replace(/_/g, ' ').toUpperCase());
 
+        // --- 2. MODO CATEGÓRICO (Discrete) ---
         if (mode === 'mode') {
             const categories = scale.domain();
-        
-            categories.forEach((cat, i) => {
-                const row = this.legendContainer.append('g') 
-                    .attr('transform', `translate(0, ${i * 20})`);
             
-                row.append('rect')
-                .attr('width', 12)
-                .attr('height', 12)
-                .attr('fill', scale(cat));
+            // Los ponemos en fila horizontal en vez de columna vertical
+            categories.forEach((cat, i) => {
+                const itemGroup = this.legendContainer.append('g') 
+                    .attr('transform', `translate(${i * 65}, 0)`); // Separación horizontal de 65px
+            
+                itemGroup.append('rect')
+                    .attr('width', 12)
+                    .attr('height', 12)
+                    .attr('fill', scale(cat));
 
-                row.append('text')
-                .attr('x', 20)
-                .attr('y', 10)
-                .style('font-size', '11px')
-                .attr('fill', 'white')
-                .text(cat);
+                itemGroup.append('text')
+                    .attr('x', 15)
+                    .attr('y', 10)
+                    .style('font-size', '11px')
+                    .attr('fill', 'black')
+                    .text(cat);
             });
-        } else {
-            const barWidth = 15; 
-            const barHeight = 80;
 
-            this.svg.selectAll("defs").remove();
+        } else {
+            // --- 3. MODO CONTINUO (Gradiente) ---
+            
+            // Limpiamos defs anteriores para no acumular basura en el DOM
+            this.svg.selectAll(`defs #legend-gradient-${mode.replace('%', '')}`).remove();
         
             const gradientId = "legend-gradient-" + mode.replace('%', '');
-            const defs = this.svg.append("defs");
+            
+            // Creamos o seleccionamos las defs
+            let defs = this.svg.select("defs");
+            if (defs.empty()) {
+                defs = this.svg.append("defs");
+            }
+            
+            // Definimos gradiente HORIZONTAL (x1=0% a x2=100%)
             const linearGradient = defs.append("linearGradient")
                 .attr("id", gradientId)
-                .attr("x1", "0%").attr("y1", "100%") 
-                .attr("x2", "0%").attr("y2", "0%");  
+                .attr("x1", "0%").attr("y1", "0%") 
+                .attr("x2", "100%").attr("y2", "0%");  
 
+            // INVERSIÓN: 100% a la izquierda, 0% a la derecha
+            // offset 0% (Izquierda) -> Color del valor 100
+            // offset 100% (Derecha) -> Color del valor 0
             [0, 0.5, 1].forEach(t => {
                 linearGradient.append("stop")
                     .attr("offset", `${t * 100}%`)
-                    .attr("stop-color", scale(t * 100));
+                    // Aquí está el truco: scale((1-t) * 100) invierte los colores
+                    // Si t=0 (izq), pedimos color 100. Si t=1 (der), pedimos color 0.
+                    .attr("stop-color", scale((1 - t) * 100));
             });
 
+            // Dibujamos el rectángulo con el gradiente
             this.legendContainer.append("rect")
                 .attr("width", barWidth)
                 .attr("height", barHeight)
-                .style("fill", `url(#${gradientId})`);
+                .style("fill", `url(#${gradientId})`)
+                .style("stroke", "#ccc") // Borde fino opcional para que se vea mejor sobre blanco
+                .style("stroke-width", "0.5px");
 
+            // Texto "100%" a la IZQUIERDA (x=0)
             this.legendContainer.append("text")
-                .attr("x", 20)
-                .attr("y", barHeight)
+                .attr("x", 0)
+                .attr("y", barHeight + 12) // Debajo de la barra
                 .style("font-size", "10px")
-                .attr('fill', 'white')
-                .text("0%");
-            
-            this.legendContainer.append("text")
-                .attr("x", 20)
-                .attr("y", 10)
-                .style("font-size", "10px")
-                .attr('fill', 'white')
+                .attr("text-anchor", "start") // Alineado al inicio
+                .attr('fill', 'black')
                 .text("100%");
+            
+            // Texto "0%" a la DERECHA (x=barWidth)
+            this.legendContainer.append("text")
+                .attr("x", barWidth)
+                .attr("y", barHeight + 12) // Debajo de la barra
+                .style("font-size", "10px")
+                .attr("text-anchor", "end") // Alineado al final
+                .attr('fill', 'black')
+                .text("0%");
         }
     }
 

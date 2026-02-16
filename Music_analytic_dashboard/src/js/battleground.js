@@ -39,17 +39,29 @@ class BattlegroundView {
     }
     
     init() {
-        // Get container dimensions
         const container = d3.select(this.containerId);
-        const bbox = container.node().getBoundingClientRect();
+        // Get container dimensions
+        const totalWidth = 850;  
+        const totalHeight = 250; 
+
+        // 2. AJUSTAMOS MÁRGENES
+        // Left: 110px para que se lean bien los nombres de las filas (Energy, Danceability...)
+        // Bottom: 40px para la leyenda
+        this.margin = {top: -40, right: 20, bottom: 70, left: 110};
+
+        // Calculamos el área donde irán las cajitas de colores
+        this.width = totalWidth - this.margin.left - this.margin.right;
+        this.height = totalHeight - this.margin.top - this.margin.bottom;
         
-        this.width = bbox.width - this.margin.left - this.margin.right;
-        this.height = bbox.height - this.margin.top - this.margin.bottom;
-        
-        // Create SVG
+        // 3. CREAMOS EL SVG "ELÁSTICO"
+        // Le decimos: "Ocupa el 100% del hueco que tengas en la web (width/height 100%),
+        // pero dibuja usando mis coordenadas fijas (viewBox)".
         this.svg = container.append('svg')
-            .attr('width', bbox.width)
-            .attr('height', bbox.height);
+            .attr('width', '100%')
+            .attr('height', '100%')
+            .attr('viewBox', `0 0 ${totalWidth} ${totalHeight}`) 
+            .attr('preserveAspectRatio', 'xMidYMid meet') 
+            .style('overflow', 'visible');
         
         this.g = this.svg.append('g')
             .attr('transform', `translate(${this.margin.left}, ${this.margin.top})`);
@@ -150,7 +162,7 @@ class BattlegroundView {
         this.svg.append('text')
             .attr('class', 'title')
             .attr('x', this.margin.left + this.width / 2)
-            .attr('y', 25)  // Más espacio desde arriba (era 20)
+            .attr('y', -75)  // Más espacio desde arriba (era 20)
             .attr('text-anchor', 'middle')
             .style('font-size', '15px')  // Más pequeño (era 16px)
             .style('font-weight', 'bold')
@@ -161,7 +173,7 @@ class BattlegroundView {
         this.svg.append('text')
             .attr('class', 'title')
             .attr('x', this.margin.left + this.width / 2)
-            .attr('y', 42)
+            .attr('y', -60)
             .attr('text-anchor', 'middle')
             .style('font-size', '11px')
             .style('fill', '#666')

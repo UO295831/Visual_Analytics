@@ -34,30 +34,44 @@ class FingerprintView {
     }
     
     init() {
-        // Get container dimensions
         const container = d3.select(this.containerId);
-        const bbox = container.node().getBoundingClientRect();
         
-        // FORZAR TAMAÑO MÍNIMO
-        this.width = Math.max(bbox.width, 300);
-        this.height = Math.max(bbox.height, 300);
-        this.radius = Math.min(this.width, this.height) / 2 - 60;
-        
-        console.log('Fingerprint size:', this.width, 'x', this.height, 'radius:', this.radius);
-    
-        
-        // Create SVG
+        // 1. LIMPIEZA (Para evitar duplicados al recargar)
+        container.selectAll('*').remove();
+
+        // 2. TAMAÑO VIRTUAL FIJO (Cuadrado ideal para gráficos radiales)
+        const totalWidth = 350;
+        const totalHeight = 350;
+
+        // 3. MÁRGENES (Suficientes para que las etiquetas de texto no se corten)
+        this.margin = {top: -60, right: 40, bottom: 200, left: 40};
+
+        this.width = totalWidth - this.margin.left - this.margin.right;
+        this.height = totalHeight - this.margin.top - this.margin.bottom;
+
+        // 4. RADIO DEL GRÁFICO (La clave del tamaño)
+        // Calculamos el radio máximo posible para que quepa en nuestro lienzo virtual
+        this.radius = Math.min(this.width, this.height) / 2;
+
+        // 5. SVG RESPONSIVO
         this.svg = container.append('svg')
-            .attr('width', this.width)
-            .attr('height', this.height);
-        
+            .attr('width', '100%')      // Se adapta al ancho de tu pantalla
+            .attr('height', '90%')     // Se adapta al alto de tu pantalla
+            .attr('viewBox', `0 0 ${totalWidth} ${totalHeight}`) // Lienzo fijo 400x400
+            .attr('preserveAspectRatio', 'xMidYMid meet') // Mantiene la proporción
+            .style('overflow', 'visible');
+
+        // 6. GRUPO CENTRADO (Diferencia importante con Battleground)
+        // Movemos el punto (0,0) al CENTRO EXACTO del lienzo para dibujar en círculo
         this.g = this.svg.append('g')
-            .attr('transform', `translate(${this.width / 2}, ${this.height / 2})`);
+            .attr('transform', `translate(${totalWidth / 2}, ${totalHeight / 2})`);
         
-        // Initial render
-        this.render(this.data);
+        console.log('✓ Fingerprint view initialized (Responsive Centered)');
         
-        console.log('✓ Fingerprint view initialized');
+        // Render inicial si hay datos
+        if (this.data) {
+             this.update(this.data);
+        }
     }
     
     update(selectedData) {
