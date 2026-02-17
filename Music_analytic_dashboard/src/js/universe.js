@@ -688,36 +688,28 @@ class UniverseView {
     onBrushEnd(event) {
         if (!event.selection) {
             this.circles.attr('opacity', 0.7);
-            this.currentSelection = null;  // AÑADIR
-            
-            if (typeof handleSelection === 'function') {
-                handleSelection(this.data);
-            }
+            FilterState.lassoSelection = null;   // FIXED: was this.currentSelection
+            applyAllFilters();                   // FIXED: was handleSelection(this.data)
             return;
         }
-        
+
         const [[x0, y0], [x1, y1]] = event.selection;
         const transform = this.currentTransform;
         const selected = [];
-        
+
         this.circles.each((d) => {
             const x = transform.applyX(this.xScale(d.tsne_1));
             const y = transform.applyY(this.yScale(d.tsne_2));
-            
             if (x >= x0 && x <= x1 && y >= y0 && y <= y1) {
                 selected.push(d);
             }
         });
-        
+
         this.highlightBrushedPoints(event.selection, false);
-        
-        // GUARDAR selección actual
-        this.currentSelection = selected;
-        
-        if (typeof handleSelection === 'function') {
-            handleSelection(selected);
-        }
-        
+
+        FilterState.lassoSelection = selected;   // FIXED: was this.currentSelection
+        applyAllFilters();                       // FIXED: was handleSelection(selected)
+
         console.log(`✓ Selected ${selected.length} songs`);
     }
     
@@ -844,20 +836,16 @@ class UniverseView {
     }
     
     clearSelection() {
-        // Clear brush
-        this.brushGroup.call(this.brush.move, null);
-        
-        // Reset opacity
-        this.circles.transition()
-            .duration(300)
-            .attr('opacity', 0.7);
-        
-        // Notify other views
-        if (typeof handleSelection === 'function') {
-            handleSelection(this.data);
+        // This now delegates to clearAllFilters in main.js
+        if (typeof clearAllFilters === 'function') {
+            clearAllFilters();
+        } else {
+            // Fallback
+            this.brushGroup.call(this.brush.move, null);
+            FilterState.lassoSelection = null;
+            applyAllFilters();
         }
-        
-        console.log('✓ Selection cleared');
+        console.log('✓ All filters cleared from universe button');
     }
     
     updateLegend() {

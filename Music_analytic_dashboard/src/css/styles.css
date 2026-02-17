@@ -306,6 +306,166 @@ body {
     font-weight: bold;
 }
 
+/* ============================================================
+   ARTIST SEARCH BAR
+   ============================================================ */
+
+.search-container {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    left: 40px;
+    min-width: 220px;
+    max-width: 280px;
+}
+
+.search-wrapper {
+    display: flex;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.12);
+    border: 1.5px solid rgba(0, 0, 0, 0.25);
+    border-radius: 8px;
+    padding: 4px 10px;
+    gap: 8px;
+    transition: all 0.2s ease;
+}
+
+.search-wrapper:focus-within {
+    background: rgba(0, 0, 0, 0.418);
+    border-color: rgba(3, 3, 3, 0.389);
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1);
+}
+
+.search-icon {
+    width: 16px;
+    height: 16px;
+    color: rgba(0, 0, 0, 0.7);
+    flex-shrink: 0;
+}
+
+.artist-search-input {
+    background: none;
+    border: none;
+    outline: none;
+    color: rgb(0, 0, 0);
+    font-size: 0.9em;
+    width: 100%;
+    padding: 4px 0;
+}
+
+.artist-search-input::placeholder {
+    color: rgba(1, 1, 1, 0.5);
+}
+
+.search-clear {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.6);
+    cursor: pointer;
+    font-size: 12px;
+    padding: 2px 4px;
+    border-radius: 4px;
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+
+.search-clear:hover {
+    color: white;
+    background: rgba(255, 255, 255, 0.15);
+}
+
+/* Dropdown */
+.search-dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    background: #1e1e2e;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    z-index: 1000;
+    overflow: hidden;
+    max-height: 280px;
+    display: flex;
+    flex-direction: column;
+}
+
+.search-dropdown-list {
+    overflow-y: auto;
+    max-height: 240px;
+}
+
+.search-dropdown-list::-webkit-scrollbar {
+    width: 4px;
+}
+
+.search-dropdown-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.search-dropdown-list::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.2);
+    border-radius: 4px;
+}
+
+.search-suggestion {
+    padding: 10px 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    transition: background 0.15s ease;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.search-suggestion:last-child {
+    border-bottom: none;
+}
+
+.search-suggestion:hover,
+.search-suggestion.active {
+    background: rgba(102, 126, 234, 0.3);
+}
+
+.search-suggestion-name {
+    color: rgb(3, 3, 3);
+    font-size: 0.9em;
+    font-weight: 500;
+}
+
+.search-suggestion-name mark {
+    background: none;
+    color: #ffd700;
+    font-weight: 700;
+}
+
+.search-suggestion-meta {
+    color: rgba(255,255,255,0.45);
+    font-size: 0.78em;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.search-dropdown-footer {
+    padding: 6px 14px;
+    font-size: 0.78em;
+    color: rgba(255,255,255,0.4);
+    background: rgba(0,0,0,0.2);
+    border-top: 1px solid rgba(255,255,255,0.08);
+}
+
+/* Estado cuando hay artista seleccionado */
+.search-wrapper.has-filter {
+    border-color: #ffd700;
+    background: rgba(255, 215, 0, 0.1);
+}
+
+.search-wrapper.has-filter .search-icon {
+    color: #ffd700;
+}
+
 /* ============================================================================
    SVG STYLES
    ============================================================================ */
@@ -323,6 +483,254 @@ body {
 .grid line {
     stroke: #e0e0e0;
     stroke-opacity: 0.7;
+}
+
+/* ── ACTIVE FILTERS BUTTON (trigger) ─────────────────────── */
+
+.filter-panel-trigger {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 14px;
+    background: rgb(10, 10, 10);
+    border: 2px solid #667eea;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.88em;
+    font-weight: 600;
+    color: #667eea;
+    transition: all 0.2s;
+    white-space: nowrap;
+    user-select: none;
+}
+
+.filter-panel-trigger:hover {
+    background: #667eea;
+    color: rgb(0, 0, 0);
+}
+
+.filter-panel-trigger:hover .filter-trigger-icon {
+    stroke: rgb(0, 0, 0);
+}
+
+.filter-trigger-icon {
+    width: 15px;
+    height: 15px;
+    stroke: #667eea;
+    fill: none;
+    flex-shrink: 0;
+    transition: stroke 0.2s;
+}
+
+.filter-badge {
+    background: #667eea;
+    color: rgb(0, 0, 0);
+    border-radius: 10px;
+    padding: 1px 7px;
+    font-size: 0.78em;
+    font-weight: 700;
+    min-width: 18px;
+    text-align: center;
+    transition: background 0.2s;
+}
+
+.filter-panel-trigger:hover .filter-badge {
+    background: rgb(0, 0, 0);
+    color: #667eea;
+}
+
+.filter-badge.zero {
+    background: #100f0f;
+    color: #888;
+}
+
+.filter-panel-trigger:hover .filter-badge.zero {
+    background: rgba(255,255,255,0.4);
+    color: rgb(0, 0, 0);
+}
+
+/* ── DROPDOWN PANEL ──────────────────────────────────────── */
+
+.filter-panel-dropdown {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    min-width: 320px;
+    max-width: 380px;
+    background: #0c0c0c;
+    border: 1.5px solid #000000;
+    border-radius: 12px;
+    box-shadow: 0 12px 40px rgba(102,126,234,0.18), 0 2px 8px rgba(0,0,0,0.08);
+    z-index: 2000;
+    overflow: hidden;
+    display: none;
+    flex-direction: column;
+    animation: filterPanelIn 0.18s ease;
+}
+
+.filter-panel-dropdown.open {
+    display: flex;
+}
+
+@keyframes filterPanelIn {
+    from { opacity: 0; transform: translateY(-6px) scale(0.98); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Header */
+.filter-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px 10px;
+    border-bottom: 1px solid #000000;
+    background: linear-gradient(135deg, #667eea08, #764ba208);
+}
+
+.filter-panel-title {
+    font-size: 0.85em;
+    font-weight: 700;
+    color: #444;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.filter-clear-all {
+    font-size: 0.78em;
+    color: #ea6677;
+    cursor: pointer;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 5px;
+    border: 1px solid #ea667730;
+    transition: all 0.15s;
+    background: none;
+}
+
+.filter-clear-all:hover {
+    background: #ea667715;
+    border-color: #ea6677;
+}
+
+/* Filter list */
+.filter-panel-list {
+    padding: 8px 0;
+    max-height: 340px;
+    overflow-y: auto;
+}
+
+.filter-panel-list::-webkit-scrollbar { width: 4px; }
+.filter-panel-list::-webkit-scrollbar-thumb { background: #ddd; border-radius: 4px; }
+
+/* Empty state */
+.filter-empty {
+    padding: 24px 16px;
+    text-align: center;
+    color: #bbb;
+    font-size: 0.85em;
+}
+
+.filter-empty-icon {
+    font-size: 1.8em;
+    margin-bottom: 6px;
+    display: block;
+}
+
+/* ── INDIVIDUAL FILTER CHIP ──────────────────────────────── */
+
+.filter-item {
+    padding: 10px 14px;
+    border-bottom: 1px solid #f5f5fa;
+    transition: background 0.12s;
+}
+
+.filter-item:last-child { border-bottom: none; }
+.filter-item:hover { background: #f8f9ff; }
+
+.filter-item-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+}
+
+.filter-item-label {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 0.83em;
+    font-weight: 600;
+    color: #555;
+}
+
+.filter-item-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.filter-item-value {
+    font-size: 0.8em;
+    color: #888;
+    font-family: monospace;
+}
+
+.filter-item-remove {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: none;
+    background: #f0f0f8;
+    color: #aaa;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    transition: all 0.15s;
+    flex-shrink: 0;
+    line-height: 1;
+}
+
+.filter-item-remove:hover {
+    background: #ea6677;
+    color: white;
+}
+
+/* Range mini-slider inside panel */
+.filter-range-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.filter-range-num {
+    font-size: 0.75em;
+    color: #888;
+    font-family: monospace;
+    min-width: 24px;
+    text-align: center;
+}
+
+.filter-mini-slider {
+    flex: 1;
+    -webkit-appearance: none;
+    height: 4px;
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+}
+
+.filter-mini-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 13px;
+    height: 13px;
+    border-radius: 50%;
+    border: 2px solid white;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.25);
 }
 
 /* ============================================================================

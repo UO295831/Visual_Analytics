@@ -29,6 +29,45 @@
                 <option value="speechiness_%">Speechiness</option>
             </select>
 
+            <!-- AÑADIR esto en la barra de controles, junto al dropdown de color -->
+            <div class="search-container">
+                <div class="search-wrapper">
+                    <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"/>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                    </svg>
+                    <input 
+                        type="text" 
+                        id="artist-search" 
+                        class="artist-search-input" 
+                        placeholder="Search artist..."
+                        autocomplete="off"
+                    />
+                    <button class="search-clear" id="search-clear" style="display:none">✕</button>
+                </div>
+                <!-- Dropdown de sugerencias -->
+                <div class="search-dropdown" id="search-dropdown" style="display:none">
+                    <div class="search-dropdown-list" id="search-dropdown-list"></div>
+                    <div class="search-dropdown-footer" id="search-results-count"></div>
+                </div>
+            </div>
+
+            <div class="filter-panel-trigger" id="filter-panel-trigger" style="position:relative">
+                <svg class="filter-trigger-icon" viewBox="0 0 24 24" stroke-width="2">
+                    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+                </svg>
+                Active Filters
+                <span class="filter-badge zero" id="filter-count-badge">0</span>
+
+                <!-- Dropdown lives INSIDE the trigger div for correct positioning -->
+                <div class="filter-panel-dropdown" id="filter-panel-dropdown">
+                    <div class="filter-panel-header">
+                        <span class="filter-panel-title">Active Filters</span>
+                        <button class="filter-clear-all" id="filter-clear-all">Clear all</button>
+                    </div>
+                    <div class="filter-panel-list" id="filter-panel-list"></div>
+                </div>
+            </div>
                 <!-- NUEVO: Mode Filter Buttons -->
             <div id="mode-filter" style="display: none; margin-left: 15px;">
                 <button id="btn-major" class="mode-btn">Major</button>
