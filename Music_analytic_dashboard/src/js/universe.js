@@ -250,7 +250,7 @@ class UniverseView {
                 d3.select(this)
                     .transition()
                     .duration(200)
-                    .attr('opacity', 1)  // Solo aumentar opacidad
+                    // .attr('opacity', 1)  // Solo aumentar opacidad
                     .attr('stroke-width', 3)
                     .attr('stroke', '#FFD700');  // Borde dorado al hover
                 
