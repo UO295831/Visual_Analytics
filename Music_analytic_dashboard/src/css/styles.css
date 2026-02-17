@@ -83,7 +83,7 @@ body {
 }
 
 .left-panel {
-    flex: 0 0 60%;
+    flex: 0 0 58%;
     display: flex;
     flex-direction: column;
     height: 100%;
