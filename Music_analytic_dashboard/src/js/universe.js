@@ -581,16 +581,15 @@ class UniverseView {
         
         // Create brush behavior
         this.brush = d3.brush()
-            .extent([[0, 0], [this.width, this.height]])
+            .extent([[0, 0], [this.width, this.height]])  // ← already correct
             .filter(function(event) {
-                // NUEVO: El brush solo funciona cuando está en modo lasso
-                return self.lassoMode;  // ← Clave: solo si lasso activado
+                return self.lassoMode;
             })
             .on('start', function(event) {
                 if (!self.lassoMode) return;
             })
             .on('brush', function(event) {
-                if (!self.lassoMode) return;
+                if (!self.lassoMode || !event.selection) return;
                 self.highlightBrushedPoints(event.selection, true);
             })
             .on('end', function(event) {
@@ -667,29 +666,26 @@ class UniverseView {
     
     highlightBrushedPoints(selection, temporary = false) {
         if (!selection) {
-            // No selection - show all
             this.circles.attr('opacity', 0.7);
             return;
         }
-        
+
         const [[x0, y0], [x1, y1]] = selection;
         const transform = this.currentTransform;
-        
+
         this.circles.attr('opacity', d => {
-            // Transform point coordinates according to current zoom
-            const x = transform.applyX(this.xScale(d.tsne_1));
-            const y = transform.applyY(this.yScale(d.tsne_2));
-            
-            const isSelected = x >= x0 && x <= x1 && y >= y0 && y <= y1;
-            return isSelected ? 0.9 : (temporary ? 0.3 : 0.1);
+            const px = transform.applyX(this.xScale(d.tsne_1));
+            const py = transform.applyY(this.yScale(d.tsne_2));
+            const inside = px >= x0 && px <= x1 && py >= y0 && py <= y1;
+            return inside ? 0.9 : (temporary ? 0.2 : 0.05);
         });
     }
-    
+        
     onBrushEnd(event) {
         if (!event.selection) {
-            this.circles.attr('opacity', 0.7);
-            FilterState.lassoSelection = null;   // FIXED: was this.currentSelection
-            applyAllFilters();                   // FIXED: was handleSelection(this.data)
+            this.circles.transition().duration(300).attr('opacity', 0.7);
+            FilterState.lassoSelection = null;
+            applyAllFilters();
             return;
         }
 
@@ -698,21 +694,24 @@ class UniverseView {
         const selected = [];
 
         this.circles.each((d) => {
-            const x = transform.applyX(this.xScale(d.tsne_1));
-            const y = transform.applyY(this.yScale(d.tsne_2));
-            if (x >= x0 && x <= x1 && y >= y0 && y <= y1) {
+            // Get pixel position in zoomGroup space, then apply zoom transform
+            const px = transform.applyX(this.xScale(d.tsne_1));
+            const py = transform.applyY(this.yScale(d.tsne_2));
+
+            // Strict containment — point center must be inside brush rectangle
+            if (px >= x0 && px <= x1 && py >= y0 && py <= y1) {
                 selected.push(d);
             }
         });
 
         this.highlightBrushedPoints(event.selection, false);
 
-        FilterState.lassoSelection = selected;   // FIXED: was this.currentSelection
-        applyAllFilters();                       // FIXED: was handleSelection(selected)
+        FilterState.lassoSelection = selected;
+        applyAllFilters();
 
-        console.log(`✓ Selected ${selected.length} songs`);
+        console.log(`✓ Lasso selected ${selected.length} songs`);
     }
-    
+
     // NUEVO: Añadir botones de control
     addControlButtons() {
         const self = this;

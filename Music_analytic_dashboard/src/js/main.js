@@ -40,9 +40,11 @@ function applyAllFilters() {
         ? FilterState.lassoSelection
         : AppState.allData;
 
+    // FIX: use object reference Set (not track_name strings)
+    // This prevents duplicate track_names from lighting up wrong songs
     if (FilterState.artistFilter !== null) {
-        const artistSet = new Set(FilterState.artistFilter.map(d => d.track_name));
-        filtered = filtered.filter(d => artistSet.has(d.track_name));
+        const artistSet = new Set(FilterState.artistFilter);
+        filtered = filtered.filter(d => artistSet.has(d));
     }
 
     if (FilterState.modeFilter !== null) {
@@ -55,11 +57,13 @@ function applyAllFilters() {
         }
     }
 
-    const filteredSet = new Set(filtered.map(d => d.track_name));
+    // FIX: Set of object refs, not strings
+    const filteredSet = new Set(filtered);
+
     AppState.views.universe.circles
         .transition().duration(300)
-        .attr('opacity', d => filteredSet.has(d.track_name) ? 0.9 : 0.05)
-        .attr('stroke-width', d => filteredSet.has(d.track_name) ? 2 : 1);
+        .attr('opacity', d => filteredSet.has(d) ? 0.9 : 0.05)
+        .attr('stroke-width', d => filteredSet.has(d) ? 2 : 1);
 
     handleSelection(filtered);
     console.log(`✓ TOTAL: ${filtered.length} songs`);
@@ -296,24 +300,35 @@ async function init() {
         }
 
         function clearAllFilters() {
-            // Lasso
+            // Clear lasso
             FilterState.lassoSelection = null;
             if (AppState.views.universe) {
                 AppState.views.universe.brushGroup.call(AppState.views.universe.brush.move, null);
-                AppState.views.universe.circles.transition().duration(300).attr('opacity', 0.7).attr('stroke-width', 1);
             }
-            // Artist
-            clearArtistFilter();
-            // Mode
+
+            // Clear artist — DIRECTLY update state and UI without calling applyAllFilters
+            FilterState.artistFilter = null;
+            const _searchInput   = document.getElementById('artist-search');
+            const _searchClear   = document.getElementById('search-clear');
+            const _searchWrapper = _searchInput.closest('.search-wrapper');
+            _searchInput.value = '';
+            _searchClear.style.display = 'none';
+            _searchWrapper.classList.remove('has-filter');
+            // NOTE: do NOT call clearArtistFilter() here — it triggers applyAllFilters internally
+
+            // Clear mode
             FilterState.modeFilter = null;
             btnMajor.classList.remove('active');
             btnMinor.classList.remove('active');
             btnBoth.classList.add('active');
-            // Range
+
+            // Clear range
             FilterState.rangeFilters = {};
-            rangeMin.value = 0; rangeMax.value = 100;
+            rangeMin.value = 0;
+            rangeMax.value = 100;
             rangeValues.textContent = '0 - 100';
 
+            // ONE single call at the end
             applyAllFilters();
             updateFilterBadge();
             console.log('✓ All filters cleared');
@@ -338,7 +353,6 @@ async function init() {
             else if (mode === 'Minor') btnMinor.classList.add('active');
             else btnBoth.classList.add('active');
 
-            // BUG 3 FIX: was calling universe.applyModeFilter() which bypassed other filters
             applyAllFilters();
         }
 
@@ -446,13 +460,19 @@ async function init() {
             console.log(`✓ Artist: "${artistName}" → ${FilterState.artistFilter.length} songs`);
         }
 
-        function clearArtistFilter() {
-            searchInput.value = '';
-            searchClear.style.display = 'none';
-            searchWrapper.classList.remove('has-filter');
-            searchDropdown.style.display = 'none';
+        function clearArtistFilter(suppressApply = false) {
             FilterState.artistFilter = null;
-            applyAllFilters();
+            const _searchInput   = document.getElementById('artist-search');
+            const _searchClear   = document.getElementById('search-clear');
+            const _searchWrapper = _searchInput.closest('.search-wrapper');
+            _searchInput.value = '';
+            _searchClear.style.display = 'none';
+            _searchWrapper.classList.remove('has-filter');
+            document.getElementById('search-dropdown').style.display = 'none';
+
+            if (!suppressApply) {
+                applyAllFilters();
+            }
         }
 
         searchInput.addEventListener('input', function () {
