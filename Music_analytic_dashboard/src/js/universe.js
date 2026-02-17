@@ -68,6 +68,7 @@ class UniverseView {
         this.drawMarginalDistributions();
         this.createTooltip();
         this.addControlButtons();
+        this.updateLegend()
         
         console.log('Universe view initialized (Clipped)');
     }
