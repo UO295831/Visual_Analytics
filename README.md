@@ -74,7 +74,7 @@ spotify-dashboard/
 ## 🚀 Quick Start
 
 ### Option 1: View Online
-Simply visit the [live demo](https://YOUR_USERNAME.github.io/spotify-dashboard/) — no installation required.
+Simply visit the [live demo](https://uo295831.github.io/Visual_Analytics/) — no installation required.
 
 ### Option 2: Run Locally
 
