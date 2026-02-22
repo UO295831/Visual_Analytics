@@ -12,7 +12,7 @@ An interactive Visual Analytics dashboard for exploring the acoustic landscape o
 
 ## 🎵 Live Demo
 
-👉 **[View Live Dashboard](https://YOUR_USERNAME.github.io/spotify-dashboard/)**
+👉 **[View Live Dashboard](https://uo295831.github.io/Visual_Analytics/)**
 
 *(Replace with your actual GitHub Pages URL after deployment)*
 
@@ -228,7 +228,6 @@ Raw Data → Transformation → Models → Visualization → Knowledge
 
 ## 🔍 Discovered Insights
 
-*(To be completed after systematic exploration sessions)*
 
 ### Preliminary Findings:
 1. **Mode Clustering:** Major and Minor songs do NOT cluster separately in t-SNE space — suggesting mode alone does not determine overall acoustic similarity.
@@ -254,10 +253,10 @@ Raw Data → Transformation → Models → Visualization → Knowledge
 ## 📧 Contact
 
 **Carlos Fernández Fernández**  
-Email: fernandezfernandez@students.uniroma1.it
+Email: fernandezfernandez.2247701@studenti.uniroma1.it
 
 **Alberto Rivas Casal**  
-Email: rivascasal@students.uniroma1.it
+Email: rivascasal.2247719@studenti.uniroma1.it
 
 ---
 
